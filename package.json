@@ -2,7 +2,7 @@
   "name": "life-in-weeks",
   "type": "module",
   "version": "1.0.0",
-  "packageManager": "pnpm@10.6.2",
+  "packageManager": "pnpm@11.25.0",
   "description": "A human lifespan drawn as a grid of weeks, with on-device AI research for any single week and WebMCP agent tools.",
   "author": "Ruandre Janse van Rensburg <ruandrejvr@gmail.com> (https://github.com/ruandre)",
   "license": "MIT",
@@ -40,10 +40,10 @@
   "dependencies": {
     "@fontsource/open-sans": "^5.3.0",
     "@google/genai": "^2.20.0",
-    "@lucide/svelte": "^1.41.0"
+    "@lucide/svelte": "^1.39.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.5.1",
+    "@antfu/eslint-config": "^9.2.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tsconfig/svelte": "^5.0.8",
     "eslint": "^10.9.1",

@@ -1,13 +1,12 @@
-minimumReleaseAgeExcludePrune: true
+# Three days of quarantine before any newly published version is installable
+minimumReleaseAge: 4320
+
+shellEmulator: true
 
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3
 
-shellEmulator: true
-
 allowBuilds:
-  '@google/genai': false
-  esbuild: true
-  protobufjs: false
-  sharp: true
+  '@google/genai': true
+  protobufjs: true
