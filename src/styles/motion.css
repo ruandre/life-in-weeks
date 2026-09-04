@@ -1,0 +1,18 @@
+@layer motion {
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    .loading-spinner {
+      animation: none;
+      opacity: 0.5;
+    }
+
+    .research-content[aria-busy='true'] .research-stream::after {
+      animation: none;
+    }
+  }
+}

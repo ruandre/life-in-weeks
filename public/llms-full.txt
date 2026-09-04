@@ -1,0 +1,42 @@
+# Life in Weeks: architecture and tool documentation
+
+## Overview
+Life in Weeks is a client-only web app, built with Svelte 5 and TypeScript, that visualizes a human lifespan as a grid of weeks.
+Each row is one year of life; each of the 52 columns in a row is one week of that year. Weeks already lived are filled, the current week is marked, and the rest are empty.
+
+Selecting a week streams a markdown card generated on-device or via Google's Gemini API. For a past week the card covers notable world events, events in the user's country when one is given, pop culture of the period (film, music, TV, games, sport, fads), typical development at that age, and a dad joke. For a future week it covers what is already known or scheduled: elections, sporting events, releases, and anniversaries.
+
+## Architecture
+- Framework: Svelte 5 in runes mode ($state, $derived, $effect)
+- Bundler: Vite
+- CSS: cascade layers (@layer tokens, reset, base, utilities, motion), container queries, clamp(), standard scrollbar-color and scrollbar-width
+- Inference:
+  - On-device: Chrome Prompt API (Gemini Nano) via `LanguageModel`, streamed with `promptStreaming()`
+  - Cloud: Google Gemini API via `@google/genai` (browser build) using user-supplied API key directly from the client
+- Session handling:
+  - On-device: one base session holds the system prompt, and each week's request runs on a `clone()` destroyed when the stream ends
+  - Gemini API: streaming completion via `ai.models.generateContentStream()` directly from the browser using CORS
+- Host: static site on GitHub Pages
+
+## WebMCP tools
+1. `generate_life_timeline` (declarative form tool)
+   Inputs:
+   - `dob`: date of birth, YYYY-MM-DD, not in the future
+   - `country`: optional country name, used for local context
+   - `lifespan`: expected lifespan in whole years, 1 to 120
+2. `select_and_research_week` (imperative tool on document.modelContext)
+   Inputs:
+   - `week_index`: 1-based index of the week to open
+   Returns the generated research text for that week.
+3. `get_timeline_stats` (imperative tool on document.modelContext)
+   Returns JSON: `dob`, `expectedLifespanYears`, `weeksLived`, `currentWeek`, `totalWeeks`, `progressPercentage`.
+
+## Security and privacy
+- No backend server. Everything runs client-side.
+- On-device inference runs locally in Chrome; prompts and answers never leave the device, and there is no telemetry.
+- When using the Gemini API, requests travel directly from the client to `https://generativelanguage.googleapis.com`. The API key is kept in tab memory only (never written to `localStorage` or cookies) and is cleared on panel close or reload, resetting the model selection.
+- Content Security Policy sets object-src to 'none', base-uri to 'self', and restricts connections to 'self' and `https://generativelanguage.googleapis.com`.
+- Model output is rendered through the app's own markdown renderer, never assigned as raw HTML from the model.
+
+## Graceful degradation
+The grid, statistics, and form work in any modern browser. When `LanguageModel` is missing or not downloaded, the panel explains how to enable it in Chrome or offers entering a Gemini API key from Google AI Studio.

@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest'
+import { escapeHtml, renderInline, renderMarkdown } from './markdown'
+
+describe('escapeHtml', () => {
+  it('escapes HTML special characters to prevent XSS', () => {
+    expect(escapeHtml('<script>alert("xss")</script>')).toBe(
+      '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;',
+    )
+    expect(escapeHtml('Tom & Jerry\'s')).toBe('Tom &amp; Jerry&#39;s')
+  })
+})
+
+describe('renderInline', () => {
+  it('renders inline code, bold, and italic', () => {
+    expect(renderInline('This is `code`')).toBe('This is <code>code</code>')
+    expect(renderInline('This is **bold** text')).toBe('This is <strong>bold</strong> text')
+    expect(renderInline('This is *italic* text')).toBe('This is <em>italic</em> text')
+  })
+
+  it('escapes html before applying markdown styles', () => {
+    expect(renderInline('**<script>**')).toBe('<strong>&lt;script&gt;</strong>')
+  })
+})
+
+describe('renderMarkdown', () => {
+  it('renders headings with correct level', () => {
+    expect(renderMarkdown('# Main Heading')).toBe('<h3>Main Heading</h3>')
+    expect(renderMarkdown('## Sub Heading')).toBe('<h3>Sub Heading</h3>')
+    expect(renderMarkdown('### Small Heading')).toBe('<h4>Small Heading</h4>')
+  })
+
+  it('renders bullet lists and wraps consecutive items in a single ul', () => {
+    const input = '- Item 1\n- Item 2\n- Item 3'
+    expect(renderMarkdown(input)).toBe(
+      '<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>',
+    )
+  })
+
+  it('renders paragraphs and separates lists from paragraphs', () => {
+    const input = 'Intro text.\n\n- Item 1\n\nOutro text.'
+    expect(renderMarkdown(input)).toBe(
+      '<p>Intro text.</p><ul><li>Item 1</li></ul><p>Outro text.</p>',
+    )
+  })
+})

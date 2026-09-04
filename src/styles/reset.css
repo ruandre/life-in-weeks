@@ -1,0 +1,65 @@
+@layer reset {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  * {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+  }
+
+  /* Legacy fallback for WebKit browsers lacking scrollbar-color */
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar,
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+    }
+
+    ::-webkit-scrollbar-thumb,
+    *::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 0;
+      transition: background-color 0.15s var(--ease-out-quint);
+    }
+
+    ::-webkit-scrollbar-thumb:hover,
+    *::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    ::-webkit-scrollbar-thumb:active,
+    *::-webkit-scrollbar-thumb:active {
+      background: color-mix(in oklch, var(--accent) 80%, var(--fg));
+    }
+
+    ::-webkit-scrollbar-corner,
+    *::-webkit-scrollbar-corner {
+      background: var(--scrollbar-track);
+    }
+  }
+
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  @media (max-width: 1024px) {
+    html,
+    body {
+      height: auto;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}

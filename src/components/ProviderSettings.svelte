@@ -1,0 +1,252 @@
+<script lang='ts'>
+  import ExternalLink from '@lucide/svelte/icons/external-link'
+  import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal'
+  import { settingsState } from '../state/settings.svelte'
+
+  const statusText = $derived.by(() => {
+    switch (settingsState.keyStatus) {
+      case 'checking': return 'Checking that key\u2026'
+      case 'invalid': return settingsState.keyError
+      case 'valid': return `${settingsState.models.length} text models available`
+      default: return null
+    }
+  })
+
+  function handleToggle(event: Event & { currentTarget: HTMLDetailsElement }): void {
+    settingsState.setPanelOpen(event.currentTarget.open)
+  }
+
+  function handleKeyInput(event: Event & { currentTarget: HTMLInputElement }): void {
+    settingsState.setApiKey(event.currentTarget.value)
+  }
+
+  function handleModelChange(event: Event & { currentTarget: HTMLSelectElement }): void {
+    settingsState.setModel(event.currentTarget.value)
+  }
+</script>
+
+<details class='provider' ontoggle={handleToggle}>
+  <summary>
+    <span class='summary-label'>
+      <SlidersHorizontal size={13} aria-hidden='true' />
+      <span>Model</span>
+    </span>
+    <span class='provider-badge'>
+      {settingsState.provider === 'gemini' ? 'Gemini API' : 'On device'}
+    </span>
+  </summary>
+
+  <div class='provider-body'>
+    <div class='field'>
+      <label for='gemini-key'>Gemini API key</label>
+      <input
+        type='password'
+        id='gemini-key'
+        name='gemini-key'
+        value={settingsState.apiKey}
+        placeholder='AIzaSy…'
+        autocomplete='off'
+        spellcheck='false'
+        aria-describedby='gemini-key-hint'
+        aria-invalid={settingsState.keyStatus === 'invalid' ? 'true' : undefined}
+        oninput={handleKeyInput}
+      />
+      {#if statusText}
+        <p
+          class={['hint', settingsState.keyStatus === 'invalid' && 'hint-error']}
+          role='status'
+          aria-live='polite'
+        >
+          {statusText}
+        </p>
+      {/if}
+      <p class='hint' id='gemini-key-hint'>
+        Get a free API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a>. Paste it to run research through Google Gemini instead of the on-device model. Held in memory for this tab only and never saved, so a reload reverts to on-device.
+      </p>
+    </div>
+
+    <div class='field'>
+      <label for='gemini-model'>Gemini model</label>
+      <div class='select-shell'>
+        <select
+          id='gemini-model'
+          name='gemini-model'
+          value={settingsState.model}
+          disabled={!settingsState.canPickModel}
+          onchange={handleModelChange}
+        >
+          {#if settingsState.canPickModel}
+            {#each settingsState.models as model (model.id)}
+              <option value={model.id}>{model.name}</option>
+            {/each}
+          {:else}
+            <option value=''>Paste a key to load models</option>
+          {/if}
+        </select>
+      </div>
+    </div>
+  </div>
+</details>
+
+<style>
+  .provider {
+    margin-top: var(--space-3);
+    border: 1px solid var(--border);
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    color: var(--grey);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: color 0.2s var(--ease-out-quint);
+  }
+
+  summary:hover,
+  summary:focus-visible {
+    color: var(--fg);
+  }
+
+  .provider-badge {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .provider-body {
+    padding: 0 var(--space-3) var(--space-3);
+  }
+
+  .field + .field {
+    margin-top: var(--space-4);
+  }
+
+  label {
+    display: block;
+    margin-bottom: var(--space-2);
+    color: var(--grey);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  input[type='password'],
+  select {
+    background: transparent;
+    border: 1px solid var(--grey-dark);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 8px var(--space-3);
+    width: 100%;
+    outline: none;
+    border-radius: 0;
+    transition: border-color 0.2s var(--ease-out-quint);
+  }
+
+  .select-shell {
+    position: relative;
+  }
+
+  /* Mask black SVG to inherit theme color */
+  .select-shell::after {
+    content: '';
+    position: absolute;
+    right: var(--space-3);
+    top: 50%;
+    width: 12px;
+    height: 8px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    background-color: var(--grey);
+    mask: var(--chevron-icon) center / contain no-repeat;
+    -webkit-mask: var(--chevron-icon) center / contain no-repeat;
+    transition: background-color 0.2s var(--ease-out-quint);
+  }
+
+  .select-shell:hover::after {
+    background-color: var(--fg);
+  }
+
+  .select-shell:has(select:disabled)::after {
+    opacity: 0.5;
+  }
+
+  select {
+    appearance: none;
+    padding-right: var(--space-8);
+  }
+
+  option {
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  input[type='password']:hover,
+  select:hover {
+    border-color: var(--grey);
+  }
+
+  input[type='password']:focus-visible,
+  select:focus-visible {
+    border-color: var(--fg);
+  }
+
+  select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .hint {
+    margin-top: var(--space-2);
+    color: var(--grey);
+    font-size: 0.7rem;
+    line-height: 1.5;
+    text-transform: none;
+    text-wrap: pretty;
+  }
+
+  .hint a {
+    color: var(--fg);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.2s var(--ease-out-quint);
+  }
+
+  .hint a:hover,
+  .hint a:focus-visible {
+    color: var(--accent);
+  }
+
+  .summary-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .summary-label :global(svg) {
+    flex-shrink: 0;
+  }
+
+  .inline-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .inline-link :global(svg) {
+    flex-shrink: 0;
+  }
+
+  .hint-error {
+    color: var(--accent);
+  }
+</style>

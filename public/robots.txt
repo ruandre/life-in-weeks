@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ruandre.github.io/life-in-weeks/sitemap.xml

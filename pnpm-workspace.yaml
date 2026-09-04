@@ -1,0 +1,13 @@
+minimumReleaseAgeExcludePrune: true
+
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  - chokidar@4.0.3
+
+shellEmulator: true
+
+allowBuilds:
+  '@google/genai': false
+  esbuild: true
+  protobufjs: false
+  sharp: true
