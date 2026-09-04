@@ -40,7 +40,7 @@ The page registers WebMCP tools, so a browser agent can drive it: `generate_life
 
 ## Stack
 
-Svelte 5 runes, TypeScript, Vite, plain CSS with cascade layers and container queries. No UI framework, one runtime dependency (a font). Deployed as a static site on GitHub Pages.
+Svelte 5 runes, TypeScript, Vite, plain CSS with cascade layers and container queries. No UI framework, minimal runtime dependencies (`@google/genai`, `@lucide/svelte`, and `@fontsource/open-sans`). Deployed as a static site on GitHub Pages.
 
 ## License
 
