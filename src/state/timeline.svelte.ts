@@ -31,6 +31,21 @@ export interface ResearchState {
   statusMessage: string
 }
 
+function createIdleResearch(): ResearchState {
+  return {
+    status: 'idle',
+    weekIndex: null,
+    age: null,
+    weekInYear: null,
+    year: null,
+    streamText: '',
+    renderedHtml: '',
+    downloadProgress: null,
+    errorMessage: null,
+    statusMessage: '',
+  }
+}
+
 export interface TimelineInput {
   dob: string
   country: string
@@ -58,18 +73,7 @@ export class TimelineState {
     targetProgress: 0,
   })
 
-  research = $state<ResearchState>({
-    status: 'idle',
-    weekIndex: null,
-    age: null,
-    weekInYear: null,
-    year: null,
-    streamText: '',
-    renderedHtml: '',
-    downloadProgress: null,
-    errorMessage: null,
-    statusMessage: '',
-  })
+  research = $state<ResearchState>(createIdleResearch())
 
   private activeController: AbortController | null = null
 
@@ -81,6 +85,12 @@ export class TimelineState {
       return false
 
     const newTimeline = calculateTimeline(dob, lifespanYears)
+
+    const inputsChanged = dobStr !== this.displayedDob
+      || country !== this.displayedCountry
+      || lifespanYears !== this.displayedLifespan
+    if (inputsChanged)
+      this.clearResearch()
 
     this.dob = dobStr
     this.country = country
@@ -115,6 +125,13 @@ export class TimelineState {
     }
 
     return true
+  }
+
+  private clearResearch(): void {
+    this.activeController?.abort()
+    this.activeController = null
+    this.selectedWeek = null
+    this.research = createIdleResearch()
   }
 
   async selectWeek(weekIndex: number): Promise<string | null> {

@@ -24,6 +24,41 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
+describe('generate', () => {
+  it('clears research for the previous inputs', async () => {
+    const state = new TimelineState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    await state.selectWeek(10)
+
+    state.generate({ dob: '1980-06-15', country: '', lifespan: 70 }, true)
+
+    expect(state.selectedWeek).toBeNull()
+    expect(state.research.status).toBe('idle')
+  })
+
+  it('cancels research still running for the previous inputs', async () => {
+    const state = new TimelineState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    void state.selectWeek(10)
+    const { signal } = vi.mocked(createResearchStream).mock.calls[0][0]
+
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 40 }, true)
+
+    expect(signal?.aborted).toBe(true)
+  })
+
+  it('keeps research when regenerating unchanged inputs', async () => {
+    const state = new TimelineState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    await state.selectWeek(10)
+
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+
+    expect(state.selectedWeek).toBe(10)
+    expect(state.research.status).toBe('ready')
+  })
+})
+
 describe('selectWeek', () => {
   it('researches with the country submitted on generate, not the draft', async () => {
     const state = new TimelineState()
