@@ -8,5 +8,3 @@ export const LIFESPAN_DEFAULT_YEARS = 70
 export const GRID_FADE_MS = 300
 export const STATS_ANIMATION_MS = 1000
 export const HEADING_REPLAY_MS = 1100
-
-export const DATE_INPUT_MAX = (): string => new Date().toISOString().slice(0, 10)

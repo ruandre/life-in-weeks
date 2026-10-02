@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseLocalDate } from './date'
+import { formatLocalIsoDate, parseLocalDate } from './date'
 
 describe('parseLocalDate', () => {
   it('parses standard YYYY-MM-DD to local midnight', () => {
@@ -30,5 +30,16 @@ describe('parseLocalDate', () => {
     expect(parseLocalDate('not-a-date')).toBeNull()
     expect(parseLocalDate(null as any)).toBeNull()
     expect(parseLocalDate(undefined as any)).toBeNull()
+  })
+})
+
+describe('formatLocalIsoDate', () => {
+  it('formats the local calendar date, not the UTC one', () => {
+    const justAfterLocalMidnight = new Date(2026, 9, 3, 0, 30)
+    expect(formatLocalIsoDate(justAfterLocalMidnight)).toBe('2026-10-03')
+  })
+
+  it('zero-pads month and day', () => {
+    expect(formatLocalIsoDate(new Date(987, 0, 5))).toBe('0987-01-05')
   })
 })

@@ -1,12 +1,8 @@
 <script lang='ts'>
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
-  import {
-    DATE_INPUT_MAX,
-    LIFESPAN_MAX_YEARS,
-    LIFESPAN_MIN_YEARS,
-  } from '../config/constants'
+  import { LIFESPAN_MAX_YEARS, LIFESPAN_MIN_YEARS } from '../config/constants'
   import { COUNTRIES } from '../config/countries'
-  import { parseLocalDate } from '../lib/date'
+  import { formatLocalIsoDate, parseLocalDate } from '../lib/date'
 
   interface Props {
     dob: string
@@ -35,7 +31,12 @@
   let countryErrorMessage = $state('')
   let lifespanErrorMessage = $state('')
 
-  const maxDate = DATE_INPUT_MAX()
+  // Refreshed on focus; a tab left open past midnight keeps a stale max otherwise
+  let maxDate = $state(formatLocalIsoDate(new Date()))
+
+  function refreshMaxDate(): void {
+    maxDate = formatLocalIsoDate(new Date())
+  }
 
   /** Case-insensitive; '' if empty, null if no match */
   function canonicalCountry(value: string): string | null {
@@ -150,6 +151,7 @@
       aria-invalid={dobError ? 'true' : undefined}
       aria-errormessage={dobError ? 'dob-error' : undefined}
       aria-describedby={dobError ? 'dob-error' : undefined}
+      onfocus={refreshMaxDate}
       onchange={handleDobChange}
     />
     <div
