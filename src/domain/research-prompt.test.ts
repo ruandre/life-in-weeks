@@ -110,4 +110,54 @@ describe('buildResearchPrompt', () => {
     })
     expect(prompt).toContain('A future week that hasn\'t happened yet')
   })
+
+  it('frames the week containing today as in progress, not history', () => {
+    const prompt = buildResearchPrompt({
+      weekIndex: 1500,
+      age: 28,
+      weekStart: new Date(2026, 8, 28),
+      weekEnd: new Date(2026, 9, 4),
+      today: new Date(2026, 9, 2, 15, 30),
+      country: null,
+    })
+    expect(prompt).toContain('The current week, still in progress.')
+    expect(prompt).toContain('## Outlook for 2026')
+    expect(prompt).not.toContain('## That week in history')
+  })
+
+  it('treats a week starting today as current', () => {
+    const prompt = buildResearchPrompt({
+      weekIndex: 1500,
+      age: 28,
+      weekStart: new Date(2026, 9, 2),
+      weekEnd: new Date(2026, 9, 8),
+      today: new Date(2026, 9, 2),
+      country: null,
+    })
+    expect(prompt).toContain('The current week, still in progress.')
+  })
+
+  it('treats a week ending today as current late in the day', () => {
+    const prompt = buildResearchPrompt({
+      weekIndex: 1500,
+      age: 28,
+      weekStart: new Date(2026, 8, 26),
+      weekEnd: new Date(2026, 9, 2),
+      today: new Date(2026, 9, 2, 23, 59),
+      country: null,
+    })
+    expect(prompt).toContain('The current week, still in progress.')
+  })
+
+  it('treats a week that ended yesterday as history', () => {
+    const prompt = buildResearchPrompt({
+      weekIndex: 1500,
+      age: 28,
+      weekStart: new Date(2026, 8, 25),
+      weekEnd: new Date(2026, 9, 1),
+      today: new Date(2026, 9, 2),
+      country: null,
+    })
+    expect(prompt).toContain('## That week in history')
+  })
 })

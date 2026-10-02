@@ -19,6 +19,21 @@ function formatYearSpan(start: Date, end: Date): string {
   return startYear === endYear ? String(startYear) : `${startYear}–${endYear}`
 }
 
+type WeekTense = 'past' | 'current' | 'future'
+
+// Compares calendar days; time of day is irrelevant
+function getWeekTense(weekStart: Date, weekEnd: Date, today: Date): WeekTense {
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  if (weekStart > startOfToday)
+    return 'future'
+  return weekEnd < startOfToday ? 'past' : 'current'
+}
+
+const UNFINISHED_WEEK_NOTES: Record<Exclude<WeekTense, 'past'>, string> = {
+  current: 'The current week, still in progress.',
+  future: 'A future week that hasn\'t happened yet.',
+}
+
 export function buildResearchPrompt({
   weekIndex,
   age,
@@ -33,11 +48,12 @@ export function buildResearchPrompt({
   const shared
     = `## Age ${age} milestones\n2-3 bullets on typical development at that age. Each bullet under 20 words.\nNo preamble, no closing summary, no analogies.\n## Dad joke\nOne short, clean dad joke, pun-based and groan-worthy. No preamble, just the joke.`
 
-  if (weekStart > today) {
+  const tense = getWeekTense(weekStart, weekEnd, today)
+  if (tense !== 'past') {
     const localSection = country
-      ? `## Outlook for ${year} in ${country}\n2-3 bullets on things already known or scheduled for ${year} specific to ${country} (elections, sports events, national milestones). Each bullet under 20 words. If nothing concrete is known this far out, say that in one bullet instead of guessing.\n`
+      ? `## Outlook for ${year} in ${country}\n2-3 bullets on things already known or scheduled for ${year} specific to ${country} (elections, sports events, national milestones). Each bullet under 20 words. If nothing concrete is known, say that in one bullet instead of guessing.\n`
       : ''
-    return `${intro} A future week that hasn't happened yet.\nReturn markdown with exactly these sections, nothing else:\n${localSection}## Outlook for ${year}\n2-3 bullets on things already known or scheduled for ${year} globally (elections, sports events, tech/space milestones). Each bullet under 20 words. If nothing concrete is known this far out, say that in one bullet instead of guessing.\n## Coming in ${year}\n2-3 bullets on culture already scheduled for ${year}: film and game releases, tours, tournaments, anniversaries. Each bullet under 20 words. If nothing concrete is known, say so in one bullet instead of guessing.\n${shared}`
+    return `${intro} ${UNFINISHED_WEEK_NOTES[tense]}\nReturn markdown with exactly these sections, nothing else:\n${localSection}## Outlook for ${year}\n2-3 bullets on things already known or scheduled for ${year} globally (elections, sports events, tech/space milestones). Each bullet under 20 words. If nothing concrete is known, say that in one bullet instead of guessing.\n## Coming in ${year}\n2-3 bullets on culture already scheduled for ${year}: film and game releases, tours, tournaments, anniversaries. Each bullet under 20 words. If nothing concrete is known, say so in one bullet instead of guessing.\n${shared}`
   }
 
   const localSection = country
