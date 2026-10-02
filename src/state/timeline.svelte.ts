@@ -46,6 +46,13 @@ function createIdleResearch(): ResearchState {
   }
 }
 
+type FailureStatus = Extract<ResearchState['status'], 'unsupported' | 'unavailable' | 'error'>
+
+const LOCAL_MODEL_FAILURES: Record<string, { status: FailureStatus, message: string }> = {
+  [LOCAL_MODEL_NEEDS_USER_ACTIVATION]: { status: 'error', message: 'Click a week to download the on-device model.' },
+  [LOCAL_MODEL_UNAVAILABLE]: { status: 'unavailable', message: 'The model is not ready on this device.' },
+}
+
 export interface TimelineInput {
   dob: string
   country: string
@@ -135,80 +142,44 @@ export class TimelineState {
   }
 
   async selectWeek(weekIndex: number): Promise<string | null> {
-    const w = Number.parseInt(String(weekIndex), 10) || 0
-    if (!w) {
-      this.research.status = 'error'
-      this.research.errorMessage = 'Pick a week on the grid.'
-      this.research.statusMessage = 'Pick a week on the grid.'
-      return 'Pick a week on the grid.'
-    }
+    if (!Number.isInteger(weekIndex) || weekIndex < 1)
+      return this.showFailure('error', 'Pick a week on the grid.')
 
-    if (this.timeline && (w < 1 || w > this.timeline.totalWeeks)) {
+    if (this.timeline && weekIndex > this.timeline.totalWeeks)
       return null
-    }
 
     this.activeController?.abort()
     const controller = new AbortController()
     this.activeController = controller
-    const { signal } = controller
     const isCurrent = () => this.activeController === controller
 
-    this.selectedWeek = w
-    const { age, weekInYear } = getWeekAge(w)
-
-    let headerYear: number | null = null
-    if (this.displayedDob) {
-      const dobDate = parseLocalDate(this.displayedDob)
-      if (dobDate) {
-        headerYear = getWeekStartDate(dobDate, w).getFullYear()
-      }
-    }
-
+    const dobDate = parseLocalDate(this.displayedDob)
+    const { age, weekInYear } = getWeekAge(weekIndex)
+    this.selectedWeek = weekIndex
     this.research = {
+      ...createIdleResearch(),
       status: 'loading',
-      weekIndex: w,
+      weekIndex,
       age,
       weekInYear,
-      year: headerYear,
-      streamText: '',
-      renderedHtml: '',
-      downloadProgress: null,
-      errorMessage: null,
+      year: dobDate ? getWeekStartDate(dobDate, weekIndex).getFullYear() : null,
       statusMessage: 'Researching that week…',
     }
 
     const { provider } = settingsState
-
-    if (provider === 'local' && !isLocalModelSupported()) {
-      const message = 'This browser has no built-in AI model.'
-      if (isCurrent()) {
-        this.research.status = 'unsupported'
-        this.research.errorMessage = message
-        this.research.statusMessage = message
-      }
-      return message
-    }
-
-    if (provider === 'gemini' && !settingsState.hasCredentials) {
-      const message = 'Add a Gemini API key and pick a model to research this week.'
-      if (isCurrent()) {
-        this.research.status = 'error'
-        this.research.errorMessage = message
-        this.research.statusMessage = message
-      }
-      return message
-    }
+    if (provider === 'local' && !isLocalModelSupported())
+      return this.showFailure('unsupported', 'This browser has no built-in AI model.')
+    if (provider === 'gemini' && !settingsState.hasCredentials)
+      return this.showFailure('error', 'Add a Gemini API key and pick a model to research this week.')
 
     try {
-      const validDob = this.displayedDob ? parseLocalDate(this.displayedDob) : null
-
-      const { stream, meta } = await createResearchStream({
-        weekIndex: w,
-        dobDate: validDob,
+      const { stream } = await createResearchStream({
+        weekIndex,
+        dobDate,
         country: this.displayedCountry,
         provider,
         gemini: { apiKey: settingsState.apiKey, model: settingsState.model },
-        signal,
+        signal: controller.signal,
         onDownloadProgress: (loaded) => {
           if (!isCurrent())
             return
@@ -217,10 +188,6 @@ export class TimelineState {
           this.research.statusMessage = 'Downloading on-device model…'
         },
       })
-
-      if (meta.year && meta.year !== headerYear) {
-        this.research.year = meta.year
-      }
 
       this.research.status = 'streaming'
       let completeResult = ''
@@ -243,35 +210,19 @@ export class TimelineState {
       if (err?.name === 'AbortError')
         return null
 
-      if (err?.message === LOCAL_MODEL_NEEDS_USER_ACTIVATION) {
-        const message = 'Click a week to download the on-device model.'
-        if (isCurrent()) {
-          this.research.status = 'error'
-          this.research.errorMessage = message
-          this.research.statusMessage = message
-        }
-        return message
-      }
-
-      if (err?.message === LOCAL_MODEL_UNAVAILABLE) {
-        const message = 'The model is not ready on this device.'
-        if (isCurrent()) {
-          this.research.status = 'unavailable'
-          this.research.errorMessage = message
-          this.research.statusMessage = message
-        }
-        return message
-      }
-
-      console.error(err)
-      const message = `Research failed: ${err?.message || err}`
-      if (isCurrent()) {
-        this.research.status = 'error'
-        this.research.errorMessage = message
-        this.research.statusMessage = message
-      }
-      return message
+      const failure = LOCAL_MODEL_FAILURES[err?.message]
+      if (!failure)
+        console.error(err)
+      const { status, message } = failure ?? { status: 'error', message: `Research failed: ${err?.message || err}` }
+      return isCurrent() ? this.showFailure(status, message) : message
     }
+  }
+
+  private showFailure(status: FailureStatus, message: string): string {
+    this.research.status = status
+    this.research.errorMessage = message
+    this.research.statusMessage = message
+    return message
   }
 
   warmUp(): void {
