@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createResearchStream } from '../services/research-service'
+import { createResearchStream, isLocalModelSupported } from '../services/research-service'
+import { settingsState } from './settings.svelte'
 import { TimelineState } from './timeline.svelte'
 
 vi.mock('../services/research-service', () => ({
@@ -9,7 +10,7 @@ vi.mock('../services/research-service', () => ({
     })(),
     meta: { age: 0, year: 2000, isFuture: false, weekRangeText: null },
   })),
-  isLocalModelSupported: () => true,
+  isLocalModelSupported: vi.fn(() => true),
   warmUpLocalModel: async () => {},
   LOCAL_MODEL_NEEDS_USER_ACTIVATION: 'NEEDS_USER_ACTIVATION',
   LOCAL_MODEL_UNAVAILABLE: 'UNAVAILABLE',
@@ -22,7 +23,14 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.clearAllMocks()
+  settingsState.isPanelOpen = false
 })
+
+function generatedState(): TimelineState {
+  const state = new TimelineState()
+  state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+  return state
+}
 
 describe('generate', () => {
   it('clears research for the previous inputs', async () => {
@@ -68,5 +76,84 @@ describe('selectWeek', () => {
     await state.selectWeek(1)
 
     expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({ country: 'France' }))
+  })
+})
+
+describe('selectWeek outcomes', () => {
+  it('renders streamed markdown and marks research ready', async () => {
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('done')
+    expect(state.research.status).toBe('ready')
+    expect(state.research.renderedHtml).toBe('<p>done</p>')
+  })
+
+  it('ignores weeks outside the timeline', async () => {
+    const state = generatedState()
+
+    expect(await state.selectWeek(70 * 52 + 1)).toBeNull()
+    expect(state.selectedWeek).toBeNull()
+  })
+
+  it('reports unsupported when the browser has no local model', async () => {
+    vi.mocked(isLocalModelSupported).mockReturnValueOnce(false)
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('This browser has no built-in AI model.')
+    expect(state.research.status).toBe('unsupported')
+  })
+
+  it('asks for credentials when Gemini is chosen without a key', async () => {
+    settingsState.isPanelOpen = true
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('Add a Gemini API key and pick a model to research this week.')
+    expect(state.research.status).toBe('error')
+  })
+
+  it('asks for a click when the model download needs a user gesture', async () => {
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('NEEDS_USER_ACTIVATION'))
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('Click a week to download the on-device model.')
+    expect(state.research.status).toBe('error')
+  })
+
+  it('reports unavailable when the device cannot run the model', async () => {
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('UNAVAILABLE'))
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('The model is not ready on this device.')
+    expect(state.research.status).toBe('unavailable')
+  })
+
+  it('reports other failures with their message', async () => {
+    vi.spyOn(console, 'error').mockImplementationOnce(() => {})
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('boom'))
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('Research failed: boom')
+    expect(state.research.errorMessage).toBe('Research failed: boom')
+    expect(state.research.statusMessage).toBe('Research failed: boom')
+  })
+
+  it('returns null without an error when superseded', async () => {
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new DOMException('Superseded', 'AbortError'))
+    const state = generatedState()
+
+    expect(await state.selectWeek(1)).toBeNull()
+    expect(state.research.errorMessage).toBeNull()
   })
 })
