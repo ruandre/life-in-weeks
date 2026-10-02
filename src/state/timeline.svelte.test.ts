@@ -4,12 +4,9 @@ import { settingsState } from './settings.svelte'
 import { TimelineState } from './timeline.svelte'
 
 vi.mock('../services/research-service', () => ({
-  createResearchStream: vi.fn(async () => ({
-    stream: (async function* () {
-      yield 'done'
-    })(),
-    meta: { age: 0, year: 2000, isFuture: false, weekRangeText: null },
-  })),
+  createResearchStream: vi.fn(async () => (async function* () {
+    yield 'done'
+  })()),
   isLocalModelSupported: vi.fn(() => true),
   warmUpLocalModel: async () => {},
   LOCAL_MODEL_NEEDS_USER_ACTIVATION: 'NEEDS_USER_ACTIVATION',

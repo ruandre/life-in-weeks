@@ -4,7 +4,7 @@ import {
   fetchGeminiModels,
   formatGeminiError,
 } from '../services/gemini'
-import { warmUpLocalModel } from '../services/local-model'
+import { warmUpLocalModel } from '../services/research-service'
 
 const VERIFY_DEBOUNCE_MS = 500
 

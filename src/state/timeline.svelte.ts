@@ -23,7 +23,6 @@ export interface ResearchState {
   age: number | null
   weekInYear: number | null
   year: number | null
-  streamText: string
   renderedHtml: string
   /** On-device model download fraction, 0 to 1 */
   downloadProgress: number | null
@@ -38,7 +37,6 @@ function createIdleResearch(): ResearchState {
     age: null,
     weekInYear: null,
     year: null,
-    streamText: '',
     renderedHtml: '',
     downloadProgress: null,
     errorMessage: null,
@@ -173,7 +171,7 @@ export class TimelineState {
       return this.showFailure('error', 'Add a Gemini API key and pick a model to research this week.')
 
     try {
-      const { stream } = await createResearchStream({
+      const stream = await createResearchStream({
         weekIndex,
         dobDate,
         country: this.displayedCountry,
@@ -196,7 +194,6 @@ export class TimelineState {
         if (!isCurrent())
           return null
         completeResult += chunk
-        this.research.streamText = completeResult
         this.research.renderedHtml = renderMarkdown(completeResult)
       }
 

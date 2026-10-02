@@ -6,11 +6,9 @@ import { streamGeminiCompletion } from './gemini'
 import { streamLocalCompletion } from './local-model'
 
 export {
-  checkLocalModelAvailability,
   isLocalModelSupported,
   LOCAL_MODEL_NEEDS_USER_ACTIVATION,
   LOCAL_MODEL_UNAVAILABLE,
-  resetLocalModelForTesting,
   warmUpLocalModel,
 } from './local-model'
 
@@ -34,19 +32,14 @@ export interface ResearchStreamOptions {
   onDownloadProgress?: (loaded: number) => void
 }
 
-export interface ResearchMeta {
+interface WeekDescription {
   age: number
   year: number | null
   isFuture: boolean
   weekRangeText: string | null
 }
 
-export interface ResearchStreamResult {
-  stream: ResearchChunkStream
-  meta: ResearchMeta
-}
-
-function describeWeek(weekIndex: number, dobDate: Date | null): ResearchMeta {
+function describeWeek(weekIndex: number, dobDate: Date | null): WeekDescription {
   const { age } = getWeekAge(weekIndex)
   if (!dobDate)
     return { age, year: null, isFuture: false, weekRangeText: null }
@@ -70,7 +63,7 @@ export async function createResearchStream({
   gemini,
   signal,
   onDownloadProgress,
-}: ResearchStreamOptions): Promise<ResearchStreamResult> {
+}: ResearchStreamOptions): Promise<ResearchChunkStream> {
   throwIfAborted(signal)
 
   const meta = describeWeek(weekIndex, dobDate)
@@ -99,10 +92,10 @@ export async function createResearchStream({
       signal,
     })
     throwIfAborted(signal)
-    return { stream, meta }
+    return stream
   }
 
   const stream = await streamLocalCompletion({ userPrompt, signal, onDownloadProgress })
   throwIfAborted(signal)
-  return { stream, meta }
+  return stream
 }

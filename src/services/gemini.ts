@@ -72,7 +72,7 @@ export function isTextModel(id: string, supportedActions?: string[]): boolean {
     return false
 
   // Deprecated models
-  if (lower.startsWith('gemini-1.') || lower.startsWith('gemini-1.5') || lower.startsWith('gemini-2.0'))
+  if (lower.startsWith('gemini-1.') || lower.startsWith('gemini-2.0'))
     return false
 
   return lower.startsWith('gemini-') || lower.startsWith('gemma-')
