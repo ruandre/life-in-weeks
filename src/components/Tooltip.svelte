@@ -8,33 +8,14 @@
 
   const { visible, text, x, y }: Props = $props()
 
-  function popover(isVisible: boolean) {
-    return (element: HTMLElement) => {
-      if (typeof element.showPopover !== 'function')
-        return
-
-      $effect(() => {
-        try {
-          if (isVisible)
-            element.showPopover()
-          else
-            element.hidePopover()
-        }
-        catch {}
-      })
-
-      return () => {
-        try {
-          element.hidePopover()
-        }
-        catch {}
-      }
-    }
+  // Re-runs whenever visible changes
+  function syncPopover(element: HTMLElement): void {
+    element.togglePopover?.(visible)
   }
 </script>
 
 <div
-  {@attach popover(visible)}
+  {@attach syncPopover}
   id='tooltip'
   popover='manual'
   class={['tooltip', visible && 'visible']}
