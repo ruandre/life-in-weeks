@@ -9,8 +9,9 @@
   import { timelineState } from './state/timeline.svelte'
 
   onMount(() => {
-    if (timelineState.dob && timelineState.lifespan) {
-      timelineState.generate(timelineState.dob, timelineState.lifespan, true)
+    const { dob, country, lifespan } = timelineState
+    if (dob && lifespan) {
+      timelineState.generate({ dob, country, lifespan }, true)
     }
 
     const cleanupWebMCP = initWebMCP({
@@ -42,7 +43,7 @@
       bind:country={timelineState.country}
       bind:lifespan={timelineState.lifespan}
       isGenerating={timelineState.isGenerating}
-      onGenerate={({ dob, lifespan }) => timelineState.generate(dob, lifespan)}
+      onGenerate={input => timelineState.generate(input)}
     />
     <Stats
       targetLived={timelineState.stats.targetLived}

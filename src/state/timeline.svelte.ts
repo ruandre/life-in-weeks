@@ -31,6 +31,12 @@ export interface ResearchState {
   statusMessage: string
 }
 
+export interface TimelineInput {
+  dob: string
+  country: string
+  lifespan: number
+}
+
 export class TimelineState {
   dob = $state('1997-11-21')
   country = $state('')
@@ -43,6 +49,7 @@ export class TimelineState {
   timeline = $state.raw<Timeline | null>(null)
   displayedDob = $state<string>('1997-11-21')
   displayedLifespan = $state<number>(LIFESPAN_DEFAULT_YEARS)
+  displayedCountry = $state('')
 
   selectedWeek = $state<number | null>(null)
 
@@ -66,7 +73,7 @@ export class TimelineState {
 
   private activeController: AbortController | null = null
 
-  generate(dobStr: string, lifespanYears: number, immediate = false): boolean {
+  generate({ dob: dobStr, country, lifespan: lifespanYears }: TimelineInput, immediate = false): boolean {
     const dob = parseLocalDate(dobStr)
     if (!dob || dob.getTime() > Date.now())
       return false
@@ -76,6 +83,7 @@ export class TimelineState {
     const newTimeline = calculateTimeline(dob, lifespanYears)
 
     this.dob = dobStr
+    this.country = country
     this.lifespan = lifespanYears
     this.isGenerating = true
     this.isGridLoaded = false
@@ -87,6 +95,7 @@ export class TimelineState {
       this.timeline = newTimeline
       this.displayedDob = dobStr
       this.displayedLifespan = lifespanYears
+      this.displayedCountry = country
       this.hasGenerated = true
       this.isGenerating = false
 
@@ -179,7 +188,7 @@ export class TimelineState {
       const { stream, meta } = await createResearchStream({
         weekIndex: w,
         dobDate: validDob,
-        country: this.country,
+        country: this.displayedCountry,
         provider,
         gemini: { apiKey: settingsState.apiKey, model: settingsState.model },
         signal,
