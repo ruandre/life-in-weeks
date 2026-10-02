@@ -20,6 +20,10 @@ describe('renderInline', () => {
   it('escapes html before applying markdown styles', () => {
     expect(renderInline('**<script>**')).toBe('<strong>&lt;script&gt;</strong>')
   })
+
+  it('leaves spaced asterisks as literal text', () => {
+    expect(renderInline('2 * 3 * 4')).toBe('2 * 3 * 4')
+  })
 })
 
 describe('renderMarkdown', () => {
@@ -27,6 +31,10 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('# Main Heading')).toBe('<h3>Main Heading</h3>')
     expect(renderMarkdown('## Sub Heading')).toBe('<h3>Sub Heading</h3>')
     expect(renderMarkdown('### Small Heading')).toBe('<h4>Small Heading</h4>')
+  })
+
+  it('renders deeper headings as the smallest heading level', () => {
+    expect(renderMarkdown('#### Deep Heading')).toBe('<h4>Deep Heading</h4>')
   })
 
   it('renders bullet lists and wraps consecutive items in a single ul', () => {

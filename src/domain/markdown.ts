@@ -14,7 +14,7 @@ export function renderInline(text: string): string {
   return escapeHtml(text)
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
+    .replace(/(?<!\*)\*(?=\S)([^*]*\S)\*(?!\*)/g, '<em>$1</em>')
 }
 
 // Escapes before markup; model output untrusted
@@ -31,7 +31,7 @@ export function renderMarkdown(text: string): string {
   }
 
   for (const line of lines) {
-    const heading = line.match(/^(#{1,3})\s+(.*)/)
+    const heading = line.match(/^(#{1,6})\s+(.*)/)
     const listItem = line.match(/^[-*]\s+(.*)/)
 
     if (heading) {
