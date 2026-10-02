@@ -74,6 +74,25 @@ describe('selectWeek', () => {
 
     expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({ country: 'France' }))
   })
+
+  it('researches with the date of birth submitted on generate, not the draft', async () => {
+    const state = generatedState()
+    state.dob = '1980-06-15'
+
+    await state.selectWeek(1)
+
+    expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({ dobDate: new Date(2000, 0, 1) }))
+  })
+
+  it('refuses research without a valid date of birth', async () => {
+    const state = new TimelineState()
+    state.displayedDob = ''
+
+    await state.selectWeek(1)
+
+    expect(createResearchStream).not.toHaveBeenCalled()
+    expect(state.research.status).toBe('error')
+  })
 })
 
 describe('selectWeek outcomes', () => {

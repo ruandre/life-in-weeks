@@ -24,7 +24,7 @@ export interface GeminiCredentials {
 
 export interface ResearchStreamOptions {
   weekIndex: number
-  dobDate: Date | null
+  dobDate: Date
   country?: string | null
   provider: ResearchProvider
   gemini?: GeminiCredentials | null
@@ -34,16 +34,13 @@ export interface ResearchStreamOptions {
 
 interface WeekDescription {
   age: number
-  year: number | null
+  year: number
   isFuture: boolean
-  weekRangeText: string | null
+  weekRangeText: string
 }
 
-function describeWeek(weekIndex: number, dobDate: Date | null): WeekDescription {
+function describeWeek(weekIndex: number, dobDate: Date): WeekDescription {
   const { age } = getWeekAge(weekIndex)
-  if (!dobDate)
-    return { age, year: null, isFuture: false, weekRangeText: null }
-
   const weekStart = getWeekStartDate(dobDate, weekIndex)
   const weekEnd = getWeekEndDate(dobDate, weekIndex)
   return {
@@ -67,15 +64,12 @@ export async function createResearchStream({
   throwIfAborted(signal)
 
   const meta = describeWeek(weekIndex, dobDate)
-  const when = meta.weekRangeText
-    ? `the week of ${meta.weekRangeText}`
-    : `calendar year ${meta.year ?? 'unknown'}`
 
   const userPrompt = buildResearchPrompt({
     weekIndex,
     age: meta.age,
-    when,
-    year: meta.year ?? 'unknown year',
+    when: `the week of ${meta.weekRangeText}`,
+    year: meta.year,
     isFuture: meta.isFuture,
     country: country?.trim() || null,
   })

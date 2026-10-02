@@ -146,12 +146,15 @@ export class TimelineState {
     if (this.timeline && weekIndex > this.timeline.totalWeeks)
       return null
 
+    const dobDate = parseLocalDate(this.displayedDob)
+    if (!dobDate)
+      return this.showFailure('error', 'Set a valid date of birth first.')
+
     this.activeController?.abort()
     const controller = new AbortController()
     this.activeController = controller
     const isCurrent = () => this.activeController === controller
 
-    const dobDate = parseLocalDate(this.displayedDob)
     const { age, weekInYear } = getWeekAge(weekIndex)
     this.selectedWeek = weekIndex
     this.research = {
@@ -160,7 +163,7 @@ export class TimelineState {
       weekIndex,
       age,
       weekInYear,
-      weekStart: dobDate ? getWeekStartDate(dobDate, weekIndex) : null,
+      weekStart: getWeekStartDate(dobDate, weekIndex),
       statusMessage: 'Researching that week…',
     }
 
