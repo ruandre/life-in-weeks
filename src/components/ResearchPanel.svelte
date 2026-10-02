@@ -29,6 +29,10 @@
   const downloadPercent = $derived(Math.round((research.downloadProgress ?? 0) * 100))
 </script>
 
+{#snippet geminiKeyHint()}
+  <p>Or get a Gemini API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a> and paste it under <strong>Model</strong> above.</p>
+{/snippet}
+
 <aside
   class='research-panel'
   id='research-panel'
@@ -99,7 +103,7 @@
           </li>
           <li>Relaunch Chrome.</li>
         </ol>
-        <p>Or get a Gemini API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a> and paste it under <strong>Model</strong> above.</p>
+        {@render geminiKeyHint()}
       </div>
     {:else if research.status === 'unavailable'}
       <div class='research-empty research-instructions'>
@@ -112,7 +116,7 @@
             >.
           </li>
         </ol>
-        <p>Or get a Gemini API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a> and paste it under <strong>Model</strong> above.</p>
+        {@render geminiKeyHint()}
       </div>
     {:else if research.status === 'error'}
       <div class='research-empty'>
