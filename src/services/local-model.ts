@@ -104,19 +104,27 @@ export async function streamLocalCompletion({
 
   const base = await getBaseSession()
   const session = await base.clone()
-  const stream = session.promptStreaming(userPrompt, { signal })
+  const destroySession = (): void => {
+    try {
+      session.destroy()
+    }
+    catch {}
+  }
+
+  // Unstarted generators skip finally; abort must free the session itself
+  if (signal?.aborted) {
+    destroySession()
+    signal.throwIfAborted()
+  }
+  signal?.addEventListener('abort', destroySession, { once: true })
 
   async function* withCleanup(): AsyncGenerator<string, void, unknown> {
     try {
-      for await (const chunk of stream) {
-        yield chunk
-      }
+      yield* session.promptStreaming(userPrompt, { signal })
     }
     finally {
-      try {
-        session.destroy()
-      }
-      catch {}
+      signal?.removeEventListener('abort', destroySession)
+      destroySession()
     }
   }
 

@@ -160,6 +160,45 @@ describe('streamLocalCompletion', () => {
     expect(LM.create).toHaveBeenCalledTimes(1)
   })
 
+  it('destroys the cloned session when aborted before streaming starts', async () => {
+    const clone = { ...fakeSession(), destroy: vi.fn() }
+    stubLanguageModel('available', async () => ({ ...fakeSession(), clone: async () => clone }))
+    const controller = new AbortController()
+
+    await streamLocalCompletion({ userPrompt: 'hi', signal: controller.signal })
+    controller.abort()
+
+    expect(clone.destroy).toHaveBeenCalledOnce()
+  })
+
+  it('destroys the cloned session when the signal aborted during cloning', async () => {
+    const clone = { ...fakeSession(), destroy: vi.fn() }
+    const controller = new AbortController()
+    stubLanguageModel('available', async () => ({
+      ...fakeSession(),
+      clone: async () => {
+        controller.abort()
+        return clone
+      },
+    }))
+
+    await expect(streamLocalCompletion({ userPrompt: 'hi', signal: controller.signal }))
+      .rejects
+      .toThrow()
+    expect(clone.destroy).toHaveBeenCalledOnce()
+  })
+
+  it('destroys the cloned session once after streaming completes', async () => {
+    const clone = { ...fakeSession(), destroy: vi.fn() }
+    stubLanguageModel('available', async () => ({ ...fakeSession(), clone: async () => clone }))
+    const controller = new AbortController()
+
+    await drain(await streamLocalCompletion({ userPrompt: 'hi', signal: controller.signal }))
+    controller.abort()
+
+    expect(clone.destroy).toHaveBeenCalledOnce()
+  })
+
   it('retries session creation after a failed attempt', async () => {
     stubUserActivation(true)
     const LM = stubLanguageModel('downloadable')
