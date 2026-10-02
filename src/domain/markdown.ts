@@ -17,19 +17,31 @@ export function renderInline(text: string): string {
     .replace(/(?<!\*)\*(?=\S)([^*]*\S)\*(?!\*)/g, '<em>$1</em>')
 }
 
-const MARKER_ONLY = /^\s*(?:#{1,6}|[-*])\s*$/
+const MARKER_ONLY = /^\s*(?:#{1,6}|[-*]|\d+[.)])\s*$/
+const HEADING = /^(#{1,6})\s+(.*)/
+const BULLET_ITEM = /^[-*]\s+(.*)/
+const NUMBERED_ITEM = /^\d+[.)]\s+(.*)/
+
+type ListTag = 'ul' | 'ol'
 
 // Escapes before markup; model output untrusted
 export function renderMarkdown(text: string): string {
   const lines = text.replace(/\r\n/g, '\n').split('\n')
   const html: string[] = []
-  let listItems: string[] | null = null
+  let list: { tag: ListTag, items: string[] } | null = null
 
   const flushList = (): void => {
-    if (listItems) {
-      html.push(`<ul>${listItems.join('')}</ul>`)
-      listItems = null
+    if (list) {
+      html.push(`<${list.tag}>${list.items.join('')}</${list.tag}>`)
+      list = null
     }
+  }
+
+  const addListItem = (tag: ListTag, content: string): void => {
+    if (list?.tag !== tag)
+      flushList()
+    list ??= { tag, items: [] }
+    list.items.push(`<li>${renderInline(content)}</li>`)
   }
 
   for (const line of lines) {
@@ -37,17 +49,20 @@ export function renderMarkdown(text: string): string {
     if (MARKER_ONLY.test(line))
       continue
 
-    const heading = line.match(/^(#{1,6})\s+(.*)/)
-    const listItem = line.match(/^[-*]\s+(.*)/)
+    const heading = line.match(HEADING)
+    const bulletItem = line.match(BULLET_ITEM)
+    const numberedItem = line.match(NUMBERED_ITEM)
 
     if (heading) {
       flushList()
       const level = heading[1].length >= 3 ? 4 : 3
       html.push(`<h${level}>${renderInline(heading[2])}</h${level}>`)
     }
-    else if (listItem) {
-      listItems ??= []
-      listItems.push(`<li>${renderInline(listItem[1])}</li>`)
+    else if (bulletItem) {
+      addListItem('ul', bulletItem[1])
+    }
+    else if (numberedItem) {
+      addListItem('ol', numberedItem[1])
     }
     else if (line.trim() === '') {
       flushList()

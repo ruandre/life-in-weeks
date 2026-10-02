@@ -57,6 +57,22 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('- a\n- \n- b')).toBe('<ul><li>a</li><li>b</li></ul>')
   })
 
+  it('renders numbered lists', () => {
+    expect(renderMarkdown('1. One\n2) Two')).toBe('<ol><li>One</li><li>Two</li></ol>')
+  })
+
+  it('starts a new list when the list type changes', () => {
+    expect(renderMarkdown('- a\n1. b')).toBe('<ul><li>a</li></ul><ol><li>b</li></ol>')
+  })
+
+  it('hides a trailing number marker while streaming', () => {
+    expect(renderMarkdown('1. One\n2.')).toBe('<ol><li>One</li></ol>')
+  })
+
+  it('escapes HTML inside numbered items', () => {
+    expect(renderMarkdown('1. <b>x</b>')).toBe('<ol><li>&lt;b&gt;x&lt;/b&gt;</li></ol>')
+  })
+
   it('renders paragraphs and separates lists from paragraphs', () => {
     const input = 'Intro text.\n\n- Item 1\n\nOutro text.'
     expect(renderMarkdown(input)).toBe(

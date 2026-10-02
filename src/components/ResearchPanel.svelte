@@ -299,6 +299,16 @@
     list-style: none;
   }
 
+  /* Numbers sit in the gutter so item text aligns with bullet items */
+  .research-content :global(ol) {
+    margin-bottom: var(--space-4);
+    padding-left: var(--space-4);
+  }
+
+  .research-content :global(ol > li) {
+    padding-left: 0;
+  }
+
   .research-content :global(li) {
     margin-bottom: var(--space-3);
     padding-left: var(--space-4);
@@ -306,7 +316,7 @@
     color: var(--grey);
   }
 
-  .research-stream :global(li::before) {
+  .research-stream :global(ul > li::before) {
     content: "";
     position: absolute;
     left: 0;
