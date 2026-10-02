@@ -81,6 +81,7 @@ export class TimelineState {
   research = $state<ResearchState>(createIdleResearch())
 
   private activeController: AbortController | null = null
+  private fadeTimer: ReturnType<typeof setTimeout> | null = null
 
   generate({ dob: dobStr, country, lifespan: lifespanYears }: TimelineInput, immediate = false): boolean {
     const dob = parseLocalDate(dobStr)
@@ -88,6 +89,9 @@ export class TimelineState {
       return false
     if (!Number.isInteger(lifespanYears) || lifespanYears < LIFESPAN_MIN_YEARS || lifespanYears > LIFESPAN_MAX_YEARS)
       return false
+
+    if (this.fadeTimer !== null)
+      clearTimeout(this.fadeTimer)
 
     const newTimeline = calculateTimeline(dob, lifespanYears)
 
@@ -107,6 +111,7 @@ export class TimelineState {
     this.stats.targetProgress = newTimeline.progressPercent
 
     const apply = () => {
+      this.fadeTimer = null
       this.timeline = newTimeline
       this.displayedDob = dobStr
       this.displayedLifespan = lifespanYears
@@ -126,7 +131,7 @@ export class TimelineState {
       apply()
     }
     else {
-      window.setTimeout(apply, GRID_FADE_MS)
+      this.fadeTimer = setTimeout(apply, GRID_FADE_MS)
     }
 
     return true

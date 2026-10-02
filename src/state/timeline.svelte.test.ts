@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { GRID_FADE_MS } from '../config/constants'
 import { createResearchStream, isLocalModelSupported } from '../services/research-service'
 import { settingsState } from './settings.svelte'
 import { TimelineState } from './timeline.svelte'
@@ -61,6 +62,54 @@ describe('generate', () => {
 
     expect(state.selectedWeek).toBe(10)
     expect(state.research.status).toBe('ready')
+  })
+})
+
+describe('generate fade', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('drops a pending fade when regenerated immediately', () => {
+    const state = new TimelineState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, false)
+
+    state.generate({ dob: '1980-06-15', country: '', lifespan: 40 }, true)
+    vi.advanceTimersByTime(GRID_FADE_MS)
+
+    expect(state.displayedDob).toBe('1980-06-15')
+    expect(state.timeline?.totalWeeks).toBe(40 * 52)
+  })
+
+  it('applies only the latest of overlapping fades', () => {
+    const state = new TimelineState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, false)
+    vi.advanceTimersByTime(GRID_FADE_MS / 3)
+
+    state.generate({ dob: '1980-06-15', country: '', lifespan: 40 }, false)
+    vi.advanceTimersByTime(GRID_FADE_MS * 2 / 3)
+
+    expect(state.timeline).toBeNull()
+
+    vi.advanceTimersByTime(GRID_FADE_MS / 3)
+
+    expect(state.displayedDob).toBe('1980-06-15')
+    expect(state.timeline?.totalWeeks).toBe(40 * 52)
+  })
+
+  it('keeps a pending fade when a rejected generate follows', () => {
+    const state = new TimelineState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, false)
+
+    expect(state.generate({ dob: '2999-01-01', country: '', lifespan: 70 }, false)).toBe(false)
+    vi.advanceTimersByTime(GRID_FADE_MS)
+
+    expect(state.displayedDob).toBe('2000-01-01')
+    expect(state.timeline?.totalWeeks).toBe(70 * 52)
   })
 })
 
