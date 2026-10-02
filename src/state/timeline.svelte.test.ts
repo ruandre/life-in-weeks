@@ -14,7 +14,7 @@ vi.mock('../services/research-service', () => ({
 }))
 
 beforeEach(() => {
-  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => setTimeout(callback, 0))
+  vi.stubGlobal('requestAnimationFrame', () => 0)
 })
 
 afterEach(() => {
