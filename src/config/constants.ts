@@ -1,5 +1,4 @@
 export const MILLISECONDS_PER_DAY = 86_400_000
-export const MILLISECONDS_PER_WEEK = MILLISECONDS_PER_DAY * 7
 export const WEEKS_PER_YEAR = 52
 export const LIFESPAN_MIN_YEARS = 1
 export const LIFESPAN_MAX_YEARS = 120

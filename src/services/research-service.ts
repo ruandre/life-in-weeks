@@ -1,7 +1,6 @@
 import type { ResearchChunkStream, ResearchProvider } from '../types'
-import { MILLISECONDS_PER_DAY } from '../config/constants'
 import { buildResearchPrompt, SYSTEM_PROMPT } from '../domain/research-prompt'
-import { getWeekAge, getWeekStartDate } from '../domain/timeline'
+import { getWeekAge, getWeekEndDate, getWeekStartDate } from '../domain/timeline'
 import { DATE_FORMAT } from '../lib/date'
 import { streamGeminiCompletion } from './gemini'
 import { streamLocalCompletion } from './local-model'
@@ -53,7 +52,7 @@ function describeWeek(weekIndex: number, dobDate: Date | null): ResearchMeta {
     return { age, year: null, isFuture: false, weekRangeText: null }
 
   const weekStart = getWeekStartDate(dobDate, weekIndex)
-  const weekEnd = new Date(weekStart.getTime() + 6 * MILLISECONDS_PER_DAY)
+  const weekEnd = getWeekEndDate(dobDate, weekIndex)
   return {
     age,
     year: weekStart.getFullYear(),

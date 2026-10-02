@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateTimeline,
   getWeekAge,
+  getWeekEndDate,
   getWeekStartDate,
-  MILLISECONDS_PER_WEEK,
   WEEKS_PER_YEAR,
 } from './timeline'
 
@@ -32,13 +32,31 @@ describe('calculateTimeline', () => {
     expect(result.progressPercent).toBe(0)
   })
 
-  it('correctly calculates elapsed weeks after 52 weeks', () => {
+  it('starts the first week of age 1 on the first birthday', () => {
     const dob = new Date(2000, 0, 1)
-    const exactly52WeeksLater = new Date(dob.getTime() + 52 * MILLISECONDS_PER_WEEK)
-    const result = calculateTimeline(dob, 80, exactly52WeeksLater)
+    const result = calculateTimeline(dob, 80, new Date(2001, 0, 1))
     expect(result.passedWeeks).toBe(52)
     expect(result.currentWeek).toBe(53)
     expect(result.progressPercent).toBeCloseTo((52 / (80 * 52)) * 100, 2)
+  })
+
+  it('stretches the 52nd week to the day before the next birthday', () => {
+    const dob = new Date(2000, 0, 1)
+    const result = calculateTimeline(dob, 80, new Date(2000, 11, 31))
+    expect(result.currentWeek).toBe(52)
+  })
+
+  it('advances the week at local midnight across a DST change', () => {
+    const dob = new Date(2025, 2, 25)
+    const result = calculateTimeline(dob, 80, new Date(2025, 3, 1))
+    expect(result.passedWeeks).toBe(1)
+  })
+
+  it('reports no passed weeks before birth', () => {
+    const dob = new Date(2000, 0, 1)
+    const result = calculateTimeline(dob, 80, new Date(1999, 11, 31))
+    expect(result.passedWeeks).toBe(0)
+    expect(result.currentWeek).toBe(1)
   })
 
   it('caps passedWeeks at totalWeeks and sets currentWeek to null when lifespan exceeded', () => {
@@ -53,13 +71,34 @@ describe('calculateTimeline', () => {
 describe('getWeekStartDate', () => {
   it('returns dob for week 1', () => {
     const dob = new Date(2000, 5, 15)
-    expect(getWeekStartDate(dob, 1).getTime()).toBe(dob.getTime())
+    expect(getWeekStartDate(dob, 1)).toEqual(dob)
   })
 
-  it('offsets correctly for week 2 and beyond', () => {
+  it('offsets by whole calendar weeks within a year', () => {
     const dob = new Date(2000, 5, 15)
-    expect(getWeekStartDate(dob, 2).getTime()).toBe(dob.getTime() + MILLISECONDS_PER_WEEK)
-    expect(getWeekStartDate(dob, 53).getTime()).toBe(dob.getTime() + 52 * MILLISECONDS_PER_WEEK)
+    expect(getWeekStartDate(dob, 2)).toEqual(new Date(2000, 5, 22))
+  })
+
+  it('stays on local midnight across a DST change', () => {
+    const dob = new Date(1997, 6, 1)
+    expect(getWeekStartDate(dob, 20)).toEqual(new Date(1997, 10, 11))
+  })
+
+  it('starts each year of age on the birthday', () => {
+    const dob = new Date(1990, 0, 5)
+    expect(getWeekStartDate(dob, 40 * WEEKS_PER_YEAR + 1)).toEqual(new Date(2030, 0, 5))
+  })
+})
+
+describe('getWeekEndDate', () => {
+  it('ends six days after the week starts', () => {
+    const dob = new Date(1997, 6, 1)
+    expect(getWeekEndDate(dob, 20)).toEqual(new Date(1997, 10, 17))
+  })
+
+  it('ends the 52nd week the day before the next birthday', () => {
+    const dob = new Date(2000, 0, 1)
+    expect(getWeekEndDate(dob, 52)).toEqual(new Date(2000, 11, 31))
   })
 })
 

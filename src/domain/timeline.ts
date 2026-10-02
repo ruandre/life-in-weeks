@@ -1,9 +1,6 @@
-import {
-  MILLISECONDS_PER_WEEK,
-  WEEKS_PER_YEAR,
-} from '../config/constants'
+import { MILLISECONDS_PER_DAY, WEEKS_PER_YEAR } from '../config/constants'
 
-export { MILLISECONDS_PER_DAY, MILLISECONDS_PER_WEEK, WEEKS_PER_YEAR } from '../config/constants'
+export { WEEKS_PER_YEAR } from '../config/constants'
 
 export interface Timeline {
   totalWeeks: number
@@ -17,6 +14,39 @@ export interface WeekAge {
   weekInYear: number
 }
 
+const DAYS_PER_WEEK = 7
+
+// Calendar arithmetic keeps local midnight across DST changes
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+}
+
+// Feb 29 birthdays fall on Mar 1 in common years
+function getBirthday(dobDate: Date, age: number): Date {
+  return new Date(dobDate.getFullYear() + age, dobDate.getMonth(), dobDate.getDate())
+}
+
+function calendarDaysBetween(from: Date, to: Date): number {
+  const fromUtc = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate())
+  const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate())
+  return Math.round((toUtc - fromUtc) / MILLISECONDS_PER_DAY)
+}
+
+function getAgeInYears(dobDate: Date, now: Date): number {
+  const age = now.getFullYear() - dobDate.getFullYear()
+  return getBirthday(dobDate, age) > now ? age - 1 : age
+}
+
+// Each row of age starts on a birthday; week 52 runs to the day before the next one
+function countPassedWeeks(dobDate: Date, now: Date): number {
+  const age = getAgeInYears(dobDate, now)
+  if (age < 0)
+    return 0
+  const daysSinceBirthday = calendarDaysBetween(getBirthday(dobDate, age), now)
+  const weeksIntoYear = Math.min(Math.floor(daysSinceBirthday / DAYS_PER_WEEK), WEEKS_PER_YEAR - 1)
+  return age * WEEKS_PER_YEAR + weeksIntoYear
+}
+
 export function calculateTimeline(
   dobDate: Date,
   lifespanYears: number,
@@ -27,8 +57,7 @@ export function calculateTimeline(
     return { totalWeeks: 0, passedWeeks: 0, currentWeek: null, progressPercent: 0 }
   }
 
-  const elapsedWeeks = Math.floor((now.getTime() - dobDate.getTime()) / MILLISECONDS_PER_WEEK)
-  const passedWeeks = Math.max(0, Math.min(elapsedWeeks, totalWeeks))
+  const passedWeeks = Math.min(countPassedWeeks(dobDate, now), totalWeeks)
   const progressPercent = (passedWeeks / totalWeeks) * 100
 
   const currentWeek = passedWeeks < totalWeeks ? passedWeeks + 1 : null
@@ -38,7 +67,13 @@ export function calculateTimeline(
 
 // 1-based; week 1 starts at dob
 export function getWeekStartDate(dobDate: Date, weekIndex: number): Date {
-  return new Date(dobDate.getTime() + (weekIndex - 1) * MILLISECONDS_PER_WEEK)
+  const { age, weekInYear } = getWeekAge(weekIndex)
+  return addDays(getBirthday(dobDate, age), (weekInYear - 1) * DAYS_PER_WEEK)
+}
+
+// 1-based; inclusive last day of the week
+export function getWeekEndDate(dobDate: Date, weekIndex: number): Date {
+  return addDays(getWeekStartDate(dobDate, weekIndex + 1), -1)
 }
 
 // 1-based; weekInYear is 1..52
