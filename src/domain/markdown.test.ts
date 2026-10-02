@@ -44,6 +44,19 @@ describe('renderMarkdown', () => {
     )
   })
 
+  it('hides a trailing marker-only line while streaming', () => {
+    expect(renderMarkdown('## Title\n- one\n-')).toBe('<h3>Title</h3><ul><li>one</li></ul>')
+  })
+
+  it('hides an empty heading in progress', () => {
+    expect(renderMarkdown('## ')).toBe('')
+    expect(renderMarkdown('#')).toBe('')
+  })
+
+  it('keeps a list together across a marker-only line', () => {
+    expect(renderMarkdown('- a\n- \n- b')).toBe('<ul><li>a</li><li>b</li></ul>')
+  })
+
   it('renders paragraphs and separates lists from paragraphs', () => {
     const input = 'Intro text.\n\n- Item 1\n\nOutro text.'
     expect(renderMarkdown(input)).toBe(

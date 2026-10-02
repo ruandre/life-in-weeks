@@ -17,6 +17,8 @@ export function renderInline(text: string): string {
     .replace(/(?<!\*)\*(?=\S)([^*]*\S)\*(?!\*)/g, '<em>$1</em>')
 }
 
+const MARKER_ONLY = /^\s*(?:#{1,6}|[-*])\s*$/
+
 // Escapes before markup; model output untrusted
 export function renderMarkdown(text: string): string {
   const lines = text.replace(/\r\n/g, '\n').split('\n')
@@ -31,6 +33,10 @@ export function renderMarkdown(text: string): string {
   }
 
   for (const line of lines) {
+    // Streamed text often ends mid-marker; the next chunk completes it
+    if (MARKER_ONLY.test(line))
+      continue
+
     const heading = line.match(/^(#{1,6})\s+(.*)/)
     const listItem = line.match(/^[-*]\s+(.*)/)
 
