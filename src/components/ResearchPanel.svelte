@@ -348,7 +348,7 @@
     text-align: left;
   }
 
-  .research-instructions strong {
+  .research-instructions > strong {
     display: block;
     color: var(--fg);
     margin-bottom: var(--space-4);
