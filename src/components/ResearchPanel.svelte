@@ -310,7 +310,7 @@
   }
 
   .research-content :global(li) {
-    margin-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
     padding-left: var(--space-4);
     position: relative;
     color: var(--grey);
