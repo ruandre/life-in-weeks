@@ -10,11 +10,19 @@ export function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, char => ESCAPE_MAP[char] || char)
 }
 
-export function renderInline(text: string): string {
-  return escapeHtml(text)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+function renderEmphasis(html: string): string {
+  return html
+    .replace(/\*\*(?=[^\s*])(.*?[^\s*])\*\*/g, '<strong>$1</strong>')
     .replace(/(?<!\*)\*(?=\S)([^*]*\S)\*(?!\*)/g, '<em>$1</em>')
+}
+
+export function renderInline(text: string): string {
+  return text
+    .split(/(`[^`]+`)/)
+    .map((segment, index) => index % 2 === 1
+      ? `<code>${escapeHtml(segment.slice(1, -1))}</code>`
+      : renderEmphasis(escapeHtml(segment)))
+    .join('')
 }
 
 const MARKER_ONLY = /^\s*(?:#{1,6}|[-*]|\d+[.)])\s*$/

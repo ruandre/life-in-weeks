@@ -23,6 +23,32 @@ describe('renderInline', () => {
 
   it('leaves spaced asterisks as literal text', () => {
     expect(renderInline('2 * 3 * 4')).toBe('2 * 3 * 4')
+    expect(renderInline('2 ** 3')).toBe('2 ** 3')
+  })
+
+  it('keeps asterisks inside code spans verbatim', () => {
+    expect(renderInline('`code *with* stars`')).toBe('<code>code *with* stars</code>')
+    expect(renderInline('`**x**`')).toBe('<code>**x**</code>')
+  })
+
+  it('escapes html inside code spans', () => {
+    expect(renderInline('`<b>`')).toBe('<code>&lt;b&gt;</code>')
+  })
+
+  it('renders italic nested inside bold', () => {
+    expect(renderInline('**nested *italic* text**')).toBe('<strong>nested <em>italic</em> text</strong>')
+  })
+
+  it('renders bold nested inside italic', () => {
+    expect(renderInline('*a **b** c*')).toBe('<em>a <strong>b</strong> c</em>')
+  })
+
+  it('renders combined bold and italic', () => {
+    expect(renderInline('***both***')).toBe('<em><strong>both</strong></em>')
+  })
+
+  it('keeps separate bold spans apart', () => {
+    expect(renderInline('**a** and **b**')).toBe('<strong>a</strong> and <strong>b</strong>')
   })
 })
 
