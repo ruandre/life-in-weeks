@@ -1,7 +1,6 @@
 import type { ResearchChunkStream, ResearchProvider } from '../types'
 import { buildResearchPrompt, SYSTEM_PROMPT } from '../domain/research-prompt'
 import { getWeekAge, getWeekEndDate, getWeekStartDate } from '../domain/timeline'
-import { DATE_FORMAT } from '../lib/date'
 import { streamGeminiCompletion } from './gemini'
 import { streamLocalCompletion } from './local-model'
 
@@ -32,25 +31,6 @@ export interface ResearchStreamOptions {
   onDownloadProgress?: (loaded: number) => void
 }
 
-interface WeekDescription {
-  age: number
-  year: number
-  isFuture: boolean
-  weekRangeText: string
-}
-
-function describeWeek(weekIndex: number, dobDate: Date): WeekDescription {
-  const { age } = getWeekAge(weekIndex)
-  const weekStart = getWeekStartDate(dobDate, weekIndex)
-  const weekEnd = getWeekEndDate(dobDate, weekIndex)
-  return {
-    age,
-    year: weekStart.getFullYear(),
-    isFuture: weekStart.getTime() > Date.now(),
-    weekRangeText: `${DATE_FORMAT.format(weekStart)} to ${DATE_FORMAT.format(weekEnd)}`,
-  }
-}
-
 // Caller owns rendering and cancellation
 export async function createResearchStream({
   weekIndex,
@@ -63,14 +43,13 @@ export async function createResearchStream({
 }: ResearchStreamOptions): Promise<ResearchChunkStream> {
   throwIfAborted(signal)
 
-  const meta = describeWeek(weekIndex, dobDate)
-
+  const weekStart = getWeekStartDate(dobDate, weekIndex)
   const userPrompt = buildResearchPrompt({
     weekIndex,
-    age: meta.age,
-    when: `the week of ${meta.weekRangeText}`,
-    year: meta.year,
-    isFuture: meta.isFuture,
+    age: getWeekAge(weekIndex).age,
+    weekStart,
+    weekEnd: getWeekEndDate(dobDate, weekIndex),
+    isFuture: weekStart.getTime() > Date.now(),
     country: country?.trim() || null,
   })
 
