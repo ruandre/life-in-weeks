@@ -9,7 +9,7 @@ export interface ResearchPromptOptions {
   weekStart: Date
   /** Inclusive; last week of each age runs to the day before next birthday */
   weekEnd: Date
-  isFuture: boolean
+  today: Date
   country: string | null
 }
 
@@ -24,23 +24,24 @@ export function buildResearchPrompt({
   age,
   weekStart,
   weekEnd,
-  isFuture,
+  today,
   country,
 }: ResearchPromptOptions): string {
   const range = `${DATE_FORMAT.format(weekStart)} to ${DATE_FORMAT.format(weekEnd)}`
   const year = formatYearSpan(weekStart, weekEnd)
+  const intro = `Week ${weekIndex} of the user's life: age ${age}, the week of ${range}. Today is ${DATE_FORMAT.format(today)}.`
   const shared
     = `## Age ${age} milestones\n2-3 bullets on typical development at that age. Each bullet under 20 words.\nNo preamble, no closing summary, no analogies.\n## Dad joke\nOne short, clean dad joke, pun-based and groan-worthy. No preamble, just the joke.`
 
-  if (isFuture) {
+  if (weekStart > today) {
     const localSection = country
       ? `## Outlook for ${year} in ${country}\n2-3 bullets on things already known or scheduled for ${year} specific to ${country} (elections, sports events, national milestones). Each bullet under 20 words. If nothing concrete is known this far out, say that in one bullet instead of guessing.\n`
       : ''
-    return `Week ${weekIndex} of the user's life: age ${age}, the week of ${range}. A future week that hasn't happened yet.\nReturn markdown with exactly these sections, nothing else:\n${localSection}## Outlook for ${year}\n2-3 bullets on things already known or scheduled for ${year} globally (elections, sports events, tech/space milestones). Each bullet under 20 words. If nothing concrete is known this far out, say that in one bullet instead of guessing.\n## Coming in ${year}\n2-3 bullets on culture already scheduled for ${year}: film and game releases, tours, tournaments, anniversaries. Each bullet under 20 words. If nothing concrete is known, say so in one bullet instead of guessing.\n${shared}`
+    return `${intro} A future week that hasn't happened yet.\nReturn markdown with exactly these sections, nothing else:\n${localSection}## Outlook for ${year}\n2-3 bullets on things already known or scheduled for ${year} globally (elections, sports events, tech/space milestones). Each bullet under 20 words. If nothing concrete is known this far out, say that in one bullet instead of guessing.\n## Coming in ${year}\n2-3 bullets on culture already scheduled for ${year}: film and game releases, tours, tournaments, anniversaries. Each bullet under 20 words. If nothing concrete is known, say so in one bullet instead of guessing.\n${shared}`
   }
 
   const localSection = country
     ? `## That week in ${country}\n2-3 bullets on real, notable events in ${country} from ${range} if you know any; otherwise the most significant events of ${year} in ${country}. Each bullet under 20 words.\n`
     : ''
-  return `Week ${weekIndex} of the user's life: age ${age}, the week of ${range}.\nReturn markdown with exactly these sections, nothing else:\n${localSection}## That week in history\n2-3 bullets on real, notable world events from ${range} if you know any; otherwise the most significant world events of ${year} overall. Each bullet under 20 words.\n## Pop culture in ${year}\n2-3 bullets on what people were watching, playing, listening to, or wearing around then: films, music, TV, games, sport, fads. Name titles and artists. Each bullet under 20 words.\n${shared}`
+  return `${intro}\nReturn markdown with exactly these sections, nothing else:\n${localSection}## That week in history\n2-3 bullets on real, notable world events from ${range} if you know any; otherwise the most significant world events of ${year} overall. Each bullet under 20 words.\n## Pop culture in ${year}\n2-3 bullets on what people were watching, playing, listening to, or wearing around then: films, music, TV, games, sport, fads. Name titles and artists. Each bullet under 20 words.\n${shared}`
 }

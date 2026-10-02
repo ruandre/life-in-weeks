@@ -8,7 +8,7 @@ describe('buildResearchPrompt', () => {
       age: 1,
       weekStart: new Date(2000, 0, 1),
       weekEnd: new Date(2000, 0, 7),
-      isFuture: false,
+      today: new Date(2026, 9, 2),
       country: null,
     })
     expect(prompt).toContain('Week 100 of the user\'s life')
@@ -26,7 +26,7 @@ describe('buildResearchPrompt', () => {
       age: 1,
       weekStart: new Date(2000, 0, 1),
       weekEnd: new Date(2000, 0, 7),
-      isFuture: false,
+      today: new Date(2026, 9, 2),
       country: null,
     })
     expect(prompt).toContain('January 1, 2000 to January 7, 2000')
@@ -38,7 +38,7 @@ describe('buildResearchPrompt', () => {
       age: 1,
       weekStart: new Date(2000, 0, 1),
       weekEnd: new Date(2000, 0, 7),
-      isFuture: false,
+      today: new Date(2026, 9, 2),
       country: 'France',
     })
     expect(prompt).not.toContain('that specific week')
@@ -51,7 +51,7 @@ describe('buildResearchPrompt', () => {
       age: 0,
       weekStart: new Date(1999, 11, 29),
       weekEnd: new Date(2000, 0, 4),
-      isFuture: false,
+      today: new Date(2026, 9, 2),
       country: null,
     })
     expect(prompt).toContain('December 29, 1999 to January 4, 2000')
@@ -64,7 +64,7 @@ describe('buildResearchPrompt', () => {
       age: 1,
       weekStart: new Date(2000, 0, 1),
       weekEnd: new Date(2000, 0, 7),
-      isFuture: false,
+      today: new Date(2026, 9, 2),
       country: 'France',
     })
     expect(prompt).toContain('## That week in France')
@@ -77,7 +77,7 @@ describe('buildResearchPrompt', () => {
       age: 57,
       weekStart: new Date(2055, 4, 10),
       weekEnd: new Date(2055, 4, 16),
-      isFuture: true,
+      today: new Date(2026, 9, 2),
       country: 'Japan',
     })
     expect(prompt).toContain('A future week that hasn\'t happened yet')
@@ -85,5 +85,29 @@ describe('buildResearchPrompt', () => {
     expect(prompt).toContain('## Outlook for 2055 in Japan')
     expect(prompt).toContain('## Outlook for 2055')
     expect(prompt).toContain('## Coming in 2055')
+  })
+
+  it('states today\'s date', () => {
+    const prompt = buildResearchPrompt({
+      weekIndex: 100,
+      age: 1,
+      weekStart: new Date(2000, 0, 1),
+      weekEnd: new Date(2000, 0, 7),
+      today: new Date(2026, 9, 2, 15, 30),
+      country: null,
+    })
+    expect(prompt).toContain('Today is October 2, 2026.')
+  })
+
+  it('treats a week starting tomorrow as future late in the day', () => {
+    const prompt = buildResearchPrompt({
+      weekIndex: 1500,
+      age: 28,
+      weekStart: new Date(2026, 9, 3),
+      weekEnd: new Date(2026, 9, 9),
+      today: new Date(2026, 9, 2, 23, 59),
+      country: null,
+    })
+    expect(prompt).toContain('A future week that hasn\'t happened yet')
   })
 })

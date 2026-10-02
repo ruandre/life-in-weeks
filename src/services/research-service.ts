@@ -49,7 +49,7 @@ export async function createResearchStream({
     age: getWeekAge(weekIndex).age,
     weekStart,
     weekEnd: getWeekEndDate(dobDate, weekIndex),
-    isFuture: weekStart.getTime() > Date.now(),
+    today: new Date(),
     country: country?.trim() || null,
   })
 
