@@ -87,6 +87,14 @@ describe('selectWeek outcomes', () => {
     expect(state.research.renderedHtml).toBe('<p>done</p>')
   })
 
+  it('records the start date of the selected week', async () => {
+    const state = generatedState()
+
+    await state.selectWeek(8)
+
+    expect(state.research.weekStart).toEqual(new Date(2000, 1, 19))
+  })
+
   it('ignores weeks outside the timeline', async () => {
     const state = generatedState()
 

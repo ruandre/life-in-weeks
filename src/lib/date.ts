@@ -4,6 +4,11 @@ export const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
+export const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  year: 'numeric',
+})
+
 /** Parses to local midnight; new Date(str) shifts day by UTC offset */
 export function parseLocalDate(dateStr: string): Date | null {
   if (!dateStr || typeof dateStr !== 'string')

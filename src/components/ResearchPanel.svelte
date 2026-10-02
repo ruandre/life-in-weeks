@@ -3,6 +3,7 @@
   import ArrowUp from '@lucide/svelte/icons/arrow-up'
   import ExternalLink from '@lucide/svelte/icons/external-link'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
+  import { MONTH_YEAR_FORMAT } from '../lib/date'
   import { settingsState } from '../state/settings.svelte'
   import Footer from './Footer.svelte'
   import ProviderSettings from './ProviderSettings.svelte'
@@ -16,8 +17,8 @@
   const metaText = $derived.by(() => {
     if (research.age === null || research.weekInYear === null)
       return null
-    if (research.year) {
-      return `Age ${research.age} · Week ${research.weekInYear} · ${research.year}`
+    if (research.weekStart) {
+      return `Age ${research.age} · Week ${research.weekInYear} · ${MONTH_YEAR_FORMAT.format(research.weekStart)}`
     }
     return `Age ${research.age} · Week ${research.weekInYear}`
   })

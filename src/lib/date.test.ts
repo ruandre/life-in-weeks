@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLocalIsoDate, parseLocalDate } from './date'
+import { formatLocalIsoDate, MONTH_YEAR_FORMAT, parseLocalDate } from './date'
 
 describe('parseLocalDate', () => {
   it('parses standard YYYY-MM-DD to local midnight', () => {
@@ -41,5 +41,12 @@ describe('formatLocalIsoDate', () => {
 
   it('zero-pads month and day', () => {
     expect(formatLocalIsoDate(new Date(987, 0, 5))).toBe('0987-01-05')
+  })
+})
+
+describe('month-year format', () => {
+  it('formats a three-letter month and the year', () => {
+    expect(MONTH_YEAR_FORMAT.format(new Date(1998, 0, 14))).toBe('Jan 1998')
+    expect(MONTH_YEAR_FORMAT.format(new Date(1998, 8, 1))).toBe('Sep 1998')
   })
 })

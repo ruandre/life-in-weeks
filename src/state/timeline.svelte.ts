@@ -22,7 +22,7 @@ export interface ResearchState {
   weekIndex: number | null
   age: number | null
   weekInYear: number | null
-  year: number | null
+  weekStart: Date | null
   renderedHtml: string
   /** On-device model download fraction, 0 to 1 */
   downloadProgress: number | null
@@ -36,7 +36,7 @@ function createIdleResearch(): ResearchState {
     weekIndex: null,
     age: null,
     weekInYear: null,
-    year: null,
+    weekStart: null,
     renderedHtml: '',
     downloadProgress: null,
     errorMessage: null,
@@ -160,7 +160,7 @@ export class TimelineState {
       weekIndex,
       age,
       weekInYear,
-      year: dobDate ? getWeekStartDate(dobDate, weekIndex).getFullYear() : null,
+      weekStart: dobDate ? getWeekStartDate(dobDate, weekIndex) : null,
       statusMessage: 'Researching that week…',
     }
 
