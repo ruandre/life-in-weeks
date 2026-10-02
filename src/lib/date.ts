@@ -9,6 +9,14 @@ export const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 })
 
+// setFullYear avoids Date's 0–99 → 1900s mapping
+function localMidnight(year: number, monthIndex: number, day: number): Date {
+  const date = new Date(0)
+  date.setFullYear(year, monthIndex, day)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
 /** Parses to local midnight; new Date(str) shifts day by UTC offset */
 export function parseLocalDate(dateStr: string): Date | null {
   if (!dateStr || typeof dateStr !== 'string')
@@ -17,7 +25,7 @@ export function parseLocalDate(dateStr: string): Date | null {
   if (typeof Temporal !== 'undefined' && 'PlainDate' in Temporal) {
     try {
       const plainDate = Temporal.PlainDate.from(dateStr)
-      return new Date(plainDate.year, plainDate.month - 1, plainDate.day, 0, 0, 0, 0)
+      return localMidnight(plainDate.year, plainDate.month - 1, plainDate.day)
     }
     catch {}
   }
@@ -27,7 +35,7 @@ export function parseLocalDate(dateStr: string): Date | null {
     const year = Number(match[1])
     const month = Number(match[2]) - 1
     const day = Number(match[3])
-    const d = new Date(year, month, day, 0, 0, 0, 0)
+    const d = localMidnight(year, month, day)
     if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
       return d
     }

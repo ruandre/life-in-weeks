@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { formatLocalIsoDate, MONTH_YEAR_FORMAT, parseLocalDate } from './date'
 
 describe('parseLocalDate', () => {
@@ -31,6 +31,53 @@ describe('parseLocalDate', () => {
     expect(parseLocalDate(null as any)).toBeNull()
     expect(parseLocalDate(undefined as any)).toBeNull()
   })
+
+  it('parses years 0-99 literally, not as 1900s', () => {
+    const d = parseLocalDate('0050-03-04')
+    expect(d).not.toBeNull()
+    expect(d!.getFullYear()).toBe(50)
+    expect(d!.getMonth()).toBe(2)
+    expect(d!.getDate()).toBe(4)
+    expect(d!.getHours()).toBe(0)
+  })
+})
+
+describe('parseLocalDate with Temporal', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  function stubTemporal() {
+    vi.stubGlobal('Temporal', {
+      PlainDate: {
+        from: (dateStr: string) => {
+          const [year, month, day] = dateStr.split('-').map(Number)
+          return { year, month, day }
+        },
+      },
+    })
+  }
+
+  it('parses standard YYYY-MM-DD to local midnight', () => {
+    stubTemporal()
+    const d = parseLocalDate('2024-03-15')
+    expect(d).not.toBeNull()
+    expect(d!.getFullYear()).toBe(2024)
+    expect(d!.getMonth()).toBe(2)
+    expect(d!.getDate()).toBe(15)
+    expect(d!.getHours()).toBe(0)
+    expect(d!.getMinutes()).toBe(0)
+  })
+
+  it('parses years 0-99 literally, not as 1900s', () => {
+    stubTemporal()
+    const d = parseLocalDate('0050-03-04')
+    expect(d).not.toBeNull()
+    expect(d!.getFullYear()).toBe(50)
+    expect(d!.getMonth()).toBe(2)
+    expect(d!.getDate()).toBe(4)
+    expect(d!.getHours()).toBe(0)
+  })
 })
 
 describe('formatLocalIsoDate', () => {
@@ -41,6 +88,10 @@ describe('formatLocalIsoDate', () => {
 
   it('zero-pads month and day', () => {
     expect(formatLocalIsoDate(new Date(987, 0, 5))).toBe('0987-01-05')
+  })
+
+  it('round-trips years 0-99 through parseLocalDate', () => {
+    expect(formatLocalIsoDate(parseLocalDate('0050-03-04')!)).toBe('0050-03-04')
   })
 })
 
