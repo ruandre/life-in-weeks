@@ -9,6 +9,8 @@ import { streamLocalCompletion } from './local-model'
 export {
   checkLocalModelAvailability,
   isLocalModelSupported,
+  LOCAL_MODEL_NEEDS_USER_ACTIVATION,
+  LOCAL_MODEL_UNAVAILABLE,
   resetLocalModelForTesting,
   warmUpLocalModel,
 } from './local-model'
@@ -30,6 +32,7 @@ export interface ResearchStreamOptions {
   provider: ResearchProvider
   gemini?: GeminiCredentials | null
   signal?: AbortSignal
+  onDownloadProgress?: (loaded: number) => void
 }
 
 export interface ResearchMeta {
@@ -67,6 +70,7 @@ export async function createResearchStream({
   provider,
   gemini,
   signal,
+  onDownloadProgress,
 }: ResearchStreamOptions): Promise<ResearchStreamResult> {
   throwIfAborted(signal)
 
@@ -99,7 +103,7 @@ export async function createResearchStream({
     return { stream, meta }
   }
 
-  const stream = await streamLocalCompletion({ userPrompt, signal })
+  const stream = await streamLocalCompletion({ userPrompt, signal, onDownloadProgress })
   throwIfAborted(signal)
   return { stream, meta }
 }

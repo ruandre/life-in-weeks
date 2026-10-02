@@ -1,7 +1,26 @@
-import type { LanguageModelSession, LanguageModelStatic, ResearchChunkStream } from '../types'
+import type {
+  LanguageModelAvailability,
+  LanguageModelAvailabilityOptions,
+  LanguageModelSession,
+  LanguageModelStatic,
+  ResearchChunkStream,
+} from '../types'
 import { SYSTEM_PROMPT } from '../domain/research-prompt'
 
+export const LOCAL_MODEL_UNAVAILABLE = 'UNAVAILABLE'
+export const LOCAL_MODEL_NEEDS_USER_ACTIVATION = 'NEEDS_USER_ACTIVATION'
+
+// availability() answers accurately only when given create() options
+const LANGUAGE_OPTIONS = {
+  expectedInputs: [{ type: 'text', languages: ['en'] }],
+  expectedOutputs: [{ type: 'text', languages: ['en'] }],
+} satisfies LanguageModelAvailabilityOptions
+
+type DownloadProgressListener = (loaded: number) => void
+
 let baseSessionPromise: Promise<LanguageModelSession> | null = null
+// Latest caller wins; superseded selections stop receiving progress
+let downloadProgressListener: DownloadProgressListener | null = null
 
 function getLanguageModel(): LanguageModelStatic | undefined {
   return globalThis.LanguageModel
@@ -13,42 +32,75 @@ function getBaseSession(): Promise<LanguageModelSession> {
   if (!LM)
     return Promise.reject(new Error('LanguageModel unavailable'))
   if (!baseSessionPromise) {
-    baseSessionPromise = LM.create({
-      expectedOutputs: [{ type: 'text', languages: ['en'] }],
+    const pending = LM.create({
+      ...LANGUAGE_OPTIONS,
       initialPrompts: [{ role: 'system', content: SYSTEM_PROMPT }],
+      monitor(monitor) {
+        monitor.addEventListener('downloadprogress', (event) => {
+          downloadProgressListener?.((event as ProgressEvent).loaded)
+        })
+      },
     })
+    // Cached rejection would fail every later attempt
+    pending.catch(() => {
+      if (baseSessionPromise === pending)
+        baseSessionPromise = null
+    })
+    baseSessionPromise = pending
   }
   return baseSessionPromise
 }
 
-export function warmUpLocalModel(): void {
-  if ('LanguageModel' in globalThis)
-    getBaseSession().catch(() => {})
+// Unknown activation support defers decision to create()
+function hasUserActivation(): boolean {
+  return globalThis.navigator?.userActivation?.isActive ?? true
+}
+
+// create() demands user gesture until model downloaded; warm-up runs without one
+export async function warmUpLocalModel(): Promise<void> {
+  try {
+    if (await checkLocalModelAvailability() === 'available')
+      await getBaseSession()
+  }
+  catch {}
 }
 
 export function isLocalModelSupported(): boolean {
   return typeof globalThis !== 'undefined' && 'LanguageModel' in globalThis
 }
 
-export async function checkLocalModelAvailability(): Promise<string> {
+export async function checkLocalModelAvailability(): Promise<LanguageModelAvailability> {
   const LM = getLanguageModel()
   if (!LM)
     return 'unavailable'
-  return LM.availability()
+  return LM.availability(LANGUAGE_OPTIONS)
 }
 
 export interface LocalModelStreamOptions {
   userPrompt: string
   signal?: AbortSignal
+  /** Fires only while model downloads; `loaded` spans 0 to 1 */
+  onDownloadProgress?: DownloadProgressListener
 }
 
-/** Throws UNAVAILABLE when model present but not downloaded */
+/**
+ * Throws LOCAL_MODEL_UNAVAILABLE when device cannot run model;
+ * LOCAL_MODEL_NEEDS_USER_ACTIVATION when download must start from user gesture
+ */
 export async function streamLocalCompletion({
   userPrompt,
   signal,
+  onDownloadProgress,
 }: LocalModelStreamOptions): Promise<ResearchChunkStream> {
-  if (await checkLocalModelAvailability() === 'unavailable')
-    throw new Error('UNAVAILABLE')
+  const availability = await checkLocalModelAvailability()
+  if (availability === 'unavailable')
+    throw new Error(LOCAL_MODEL_UNAVAILABLE)
+
+  const needsDownload = availability !== 'available'
+  if (needsDownload && !baseSessionPromise && !hasUserActivation())
+    throw new Error(LOCAL_MODEL_NEEDS_USER_ACTIVATION)
+
+  downloadProgressListener = needsDownload ? onDownloadProgress ?? null : null
 
   const base = await getBaseSession()
   const session = await base.clone()
@@ -73,4 +125,5 @@ export async function streamLocalCompletion({
 
 export function resetLocalModelForTesting(): void {
   baseSessionPromise = null
+  downloadProgressListener = null
 }

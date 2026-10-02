@@ -1,7 +1,20 @@
-export interface LanguageModelCreateOptions {
-  expectedOutputs?: Array<{ type: string, languages?: string[] }>
+export type LanguageModelAvailability = 'unavailable' | 'downloadable' | 'downloading' | 'available'
+
+export interface LanguageModelExpected {
+  type: 'text' | 'image' | 'audio'
+  languages?: string[]
+}
+
+export interface LanguageModelAvailabilityOptions {
+  expectedInputs?: LanguageModelExpected[]
+  expectedOutputs?: LanguageModelExpected[]
+}
+
+export interface LanguageModelCreateOptions extends LanguageModelAvailabilityOptions {
   initialPrompts?: Array<{ role: 'system' | 'user' | 'assistant', content: string }>
   signal?: AbortSignal
+  /** Receives target firing `downloadprogress` events; `loaded` spans 0 to 1 */
+  monitor?: (monitor: EventTarget) => void
 }
 
 export interface LanguageModelSession {
@@ -12,7 +25,7 @@ export interface LanguageModelSession {
 
 export interface LanguageModelStatic {
   create: (options?: LanguageModelCreateOptions) => Promise<LanguageModelSession>
-  availability: () => Promise<'readily' | 'after-download' | 'no' | 'unavailable' | string>
+  availability: (options?: LanguageModelAvailabilityOptions) => Promise<LanguageModelAvailability>
 }
 
 export interface ModelContextTool {

@@ -11,18 +11,22 @@ import { parseLocalDate } from '../lib/date'
 import {
   createResearchStream,
   isLocalModelSupported,
+  LOCAL_MODEL_NEEDS_USER_ACTIVATION,
+  LOCAL_MODEL_UNAVAILABLE,
   warmUpLocalModel,
 } from '../services/research-service'
 import { settingsState } from './settings.svelte'
 
 export interface ResearchState {
-  status: 'idle' | 'loading' | 'streaming' | 'ready' | 'unsupported' | 'unavailable' | 'error'
+  status: 'idle' | 'loading' | 'downloading' | 'streaming' | 'ready' | 'unsupported' | 'unavailable' | 'error'
   weekIndex: number | null
   age: number | null
   weekInYear: number | null
   year: number | null
   streamText: string
   renderedHtml: string
+  /** On-device model download fraction, 0 to 1 */
+  downloadProgress: number | null
   errorMessage: string | null
   statusMessage: string
 }
@@ -55,6 +59,7 @@ export class TimelineState {
     year: null,
     streamText: '',
     renderedHtml: '',
+    downloadProgress: null,
     errorMessage: null,
     statusMessage: '',
   })
@@ -141,6 +146,7 @@ export class TimelineState {
       year: headerYear,
       streamText: '',
       renderedHtml: '',
+      downloadProgress: null,
       errorMessage: null,
       statusMessage: 'Researching that week…',
     }
@@ -177,6 +183,13 @@ export class TimelineState {
         provider,
         gemini: { apiKey: settingsState.apiKey, model: settingsState.model },
         signal,
+        onDownloadProgress: (loaded) => {
+          if (!isCurrent())
+            return
+          this.research.status = 'downloading'
+          this.research.downloadProgress = loaded
+          this.research.statusMessage = 'Downloading on-device model…'
+        },
       })
 
       if (meta.year && meta.year !== headerYear) {
@@ -204,7 +217,17 @@ export class TimelineState {
       if (err?.name === 'AbortError')
         return null
 
-      if (err?.message === 'UNAVAILABLE') {
+      if (err?.message === LOCAL_MODEL_NEEDS_USER_ACTIVATION) {
+        const message = 'Click a week to download the on-device model.'
+        if (isCurrent()) {
+          this.research.status = 'error'
+          this.research.errorMessage = message
+          this.research.statusMessage = message
+        }
+        return message
+      }
+
+      if (err?.message === LOCAL_MODEL_UNAVAILABLE) {
         const message = 'The model is not ready on this device.'
         if (isCurrent()) {
           this.research.status = 'unavailable'

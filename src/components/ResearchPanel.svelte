@@ -22,9 +22,11 @@
     return `Age ${research.age} · Week ${research.weekInYear}`
   })
 
-  const isBusy = $derived(
-    research.status === 'loading' || research.status === 'streaming',
-  )
+  const BUSY_STATUSES = new Set<ResearchState['status']>(['loading', 'downloading', 'streaming'])
+  const isBusy = $derived(BUSY_STATUSES.has(research.status))
+  const showsLoader = $derived(research.status === 'loading' || research.status === 'downloading')
+
+  const downloadPercent = $derived(Math.round((research.downloadProgress ?? 0) * 100))
 </script>
 
 <aside
@@ -54,7 +56,7 @@
   </div>
 
   <div
-    class='research-content'
+    class={['research-content', { 'has-loader': showsLoader }]}
     id='research-content'
     aria-busy={isBusy ? 'true' : undefined}
   >
@@ -71,6 +73,20 @@
       <div class='loading-container'>
         <LoaderCircle size={22} class='loading-spinner' aria-hidden='true' />
         <div>Digging through that week&hellip;</div>
+      </div>
+    {:else if research.status === 'downloading'}
+      <div class='loading-container'>
+        <LoaderCircle size={22} class='loading-spinner' aria-hidden='true' />
+        <label for='model-download-progress'>
+          Downloading on-device model&hellip; {downloadPercent}%
+        </label>
+        <progress
+          id='model-download-progress'
+          class='download-progress'
+          max='1'
+          value={research.downloadProgress ?? 0}
+        ></progress>
+        <p class='download-note'>One-time download, stays on this device.</p>
       </div>
     {:else if research.status === 'unsupported'}
       <div class='research-empty research-instructions'>
@@ -233,6 +249,12 @@
     overflow-y: auto;
   }
 
+  /* Loader fills space below week meta without overflowing */
+  .research-content.has-loader {
+    display: flex;
+    flex-direction: column;
+  }
+
   .research-content :global(h3) {
     color: var(--accent);
     margin-top: var(--space-6);
@@ -376,12 +398,23 @@
     color: var(--fg);
   }
 
+  .download-progress {
+    inline-size: min(100%, 16rem);
+    margin-top: var(--space-4);
+    accent-color: var(--accent);
+  }
+
+  .download-note {
+    margin-top: var(--space-4);
+    font-size: 0.875em;
+  }
+
   .loading-container {
     display: flex;
+    flex: 1;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     color: var(--grey);
     text-align: center;
   }
