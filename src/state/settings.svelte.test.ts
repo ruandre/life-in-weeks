@@ -174,6 +174,42 @@ describe('key verification', () => {
     expect(state.keyError).toBeNull()
     expect(state.models).toEqual([otherModel])
   })
+
+  it('ignores a late success from the old key while the new key is debouncing', async () => {
+    const first = Promise.withResolvers<GeminiModel[]>()
+    fetchModels
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce([thirdModel])
+    const state = new SettingsState()
+    state.setApiKey('old-key')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    state.setApiKey('new-key')
+    first.resolve([defaultModel, otherModel])
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(state.keyStatus).toBe('checking')
+    expect(state.models).toEqual([])
+    expect(state.canPickModel).toBe(false)
+  })
+
+  it('verifies the new key after a late success from the old key', async () => {
+    const first = Promise.withResolvers<GeminiModel[]>()
+    fetchModels
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValueOnce([thirdModel])
+    const state = new SettingsState()
+    state.setApiKey('old-key')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    state.setApiKey('new-key')
+    first.resolve([defaultModel, otherModel])
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    expect(state.keyStatus).toBe('valid')
+    expect(state.models).toEqual([thirdModel])
+    expect(state.model).toBe(thirdModel.id)
+  })
 })
 
 describe('default model selection', () => {
@@ -260,6 +296,24 @@ describe('setPanelOpen', () => {
     expect(fetchModels.mock.calls[0][0].signal?.aborted).toBe(true)
   })
 
+  it('ignores a late success from verification aborted on close', async () => {
+    const pending = Promise.withResolvers<GeminiModel[]>()
+    fetchModels.mockReturnValueOnce(pending.promise)
+    const state = new SettingsState()
+    state.setPanelOpen(true)
+    state.setApiKey('key')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    state.setPanelOpen(false)
+    pending.resolve([defaultModel, otherModel])
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(state.apiKey).toBe('')
+    expect(state.keyStatus).toBe('empty')
+    expect(state.models).toEqual([])
+    expect(state.canPickModel).toBe(false)
+  })
+
   it('warms up the local model on close', () => {
     const state = new SettingsState()
 
@@ -278,6 +332,17 @@ describe('setPanelOpen', () => {
 
     expect(fetchModels).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'key' }))
     expect(state.keyStatus).toBe('valid')
+  })
+
+  it('replaces pending debounced verification when opening with an unverified key', async () => {
+    fetchModels.mockResolvedValue([defaultModel])
+    const state = new SettingsState()
+    state.setApiKey('key')
+
+    state.setPanelOpen(true)
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    expect(fetchModels).toHaveBeenCalledTimes(1)
   })
 
   it('does not re-verify a valid key on open', async () => {

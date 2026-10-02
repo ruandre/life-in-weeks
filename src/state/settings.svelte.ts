@@ -57,9 +57,7 @@ export class SettingsState {
   }
 
   private clearCredentials(): void {
-    if (this.verifyTimer !== null)
-      clearTimeout(this.verifyTimer)
-    this.verifyController?.abort()
+    this.cancelPendingVerification()
     this.keyError = null
     this.apiKey = ''
     this.model = DEFAULT_GEMINI_MODEL
@@ -68,9 +66,7 @@ export class SettingsState {
   }
 
   private scheduleVerification(): void {
-    if (this.verifyTimer !== null)
-      clearTimeout(this.verifyTimer)
-    this.verifyController?.abort()
+    this.cancelPendingVerification()
     this.keyError = null
 
     if (!this.apiKey) {
@@ -82,8 +78,15 @@ export class SettingsState {
     this.verifyTimer = setTimeout(() => this.verifyAndLoad(), VERIFY_DEBOUNCE_MS)
   }
 
-  private startRequest(): AbortController {
+  private cancelPendingVerification(): void {
+    if (this.verifyTimer !== null)
+      clearTimeout(this.verifyTimer)
+    this.verifyTimer = null
     this.verifyController?.abort()
+  }
+
+  private startRequest(): AbortController {
+    this.cancelPendingVerification()
     const controller = new AbortController()
     this.verifyController = controller
     return controller
@@ -99,7 +102,7 @@ export class SettingsState {
         apiKey: this.apiKey,
         signal: controller.signal,
       })
-      if (this.verifyController !== controller)
+      if (controller.signal.aborted)
         return
       this.keyStatus = 'valid'
       this.models = models
@@ -111,7 +114,7 @@ export class SettingsState {
   }
 
   private recordFailure(err: any, controller: AbortController): void {
-    if (err?.name === 'AbortError' || this.verifyController !== controller)
+    if (err?.name === 'AbortError' || controller.signal.aborted)
       return
     this.keyStatus = 'invalid'
     this.keyError = formatGeminiError(err) || 'Could not reach Gemini API.'
