@@ -61,7 +61,7 @@
         </p>
       {/if}
       <p class='hint' id='gemini-key-hint'>
-        Get a free API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a>. Paste it to run research through Google Gemini instead of the on-device model. Held in memory for this tab only and never saved, so a reload reverts to on-device.
+        Get a free API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a>. Paste it to run research through Google Gemini instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.
       </p>
     </div>
 
