@@ -10,15 +10,12 @@
 
   const { targetLived, targetProgress }: Props = $props()
 
-  const livedTween = new Tween(0, {
+  const tweenOptions = {
     duration: () => prefersReducedMotion.current ? 0 : STATS_ANIMATION_MS,
     easing: easeOutExpo,
-  })
-
-  const progressTween = new Tween(0, {
-    duration: () => prefersReducedMotion.current ? 0 : STATS_ANIMATION_MS,
-    easing: easeOutExpo,
-  })
+  }
+  const livedTween = Tween.of(() => targetLived, tweenOptions)
+  const progressTween = Tween.of(() => targetProgress, tweenOptions)
 
   let replaying = false
 
@@ -32,11 +29,6 @@
   const accessibleSummary = $derived(
     `${targetLived.toLocaleString()} weeks lived, ${targetProgress.toFixed(1)}% of expected lifespan.`,
   )
-
-  $effect(() => {
-    livedTween.target = targetLived
-    progressTween.target = targetProgress
-  })
 
   function handlePointerEnter(): void {
     if (replaying || prefersReducedMotion.current)
