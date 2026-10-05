@@ -243,6 +243,17 @@ describe('selectWeek outcomes', () => {
     expect(state.research.status).toBe('loading')
   })
 
+  it('reports an empty response instead of a blank panel', async () => {
+    vi.mocked(createResearchStream).mockResolvedValueOnce((async function* () {})())
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(state.research.status).toBe('error')
+    expect(result).toBe(state.research.errorMessage)
+    expect(result).toContain('no research')
+  })
+
   it('returns null without an error when superseded', async () => {
     vi.mocked(createResearchStream).mockRejectedValueOnce(new DOMException('Superseded', 'AbortError'))
     const state = generatedState()

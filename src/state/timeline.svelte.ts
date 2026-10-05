@@ -207,10 +207,13 @@ export class TimelineState {
         this.research.renderedHtml = renderMarkdown(completeResult)
       }
 
-      if (isCurrent()) {
-        this.research.status = 'ready'
-        this.research.statusMessage = 'Research ready.'
-      }
+      if (!isCurrent())
+        return completeResult
+      // Safety-blocked or empty responses would otherwise leave a blank panel
+      if (completeResult.trim() === '')
+        return this.showFailure('error', 'The model returned no research for this week. Try again or pick another week.')
+      this.research.status = 'ready'
+      this.research.statusMessage = 'Research ready.'
       return completeResult
     }
     catch (err: any) {
