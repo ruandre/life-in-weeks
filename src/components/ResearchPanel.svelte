@@ -60,9 +60,14 @@
     <ProviderSettings />
   </div>
 
+  <!-- Scrolls on desktop with no focusable children; tabindex lets keyboards scroll it -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div
     class={['research-content', { 'has-loader': showsLoader }]}
     id='research-content'
+    role='region'
+    aria-label='Research results'
+    tabindex='0'
     aria-busy={isBusy ? 'true' : undefined}
   >
     {#if metaText && research.status !== 'idle'}
@@ -253,6 +258,11 @@
     color: var(--fg);
     text-transform: none;
     overflow-y: auto;
+  }
+
+  .research-content:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   /* Loader fills space below week meta without overflowing */
