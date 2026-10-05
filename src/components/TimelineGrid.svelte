@@ -114,18 +114,12 @@
     return `Age ${age}, week ${weekInYear}${yearText}`
   }
 
-  function describeWeek(weekIndex: number, dobDate: Date | null, isPassed: boolean, isCurrent: boolean): string {
+  // Row header announces its year; cell names only a later calendar year
+  function describeWeek(weekIndex: number, isPassed: boolean, yearPastRowHeader: number | null): string {
     const { age, weekInYear } = getWeekAge(weekIndex)
-    const year = dobDate ? getWeekStartDate(dobDate, weekIndex).getFullYear() : null
-
-    let label = `Age ${age}, week ${weekInYear}`
-    if (year)
-      label += `, ${year}`
-    if (isCurrent)
-      label += ' (current week)'
-    else if (isPassed)
-      label += ' (passed)'
-    return label
+    const yearText = yearPastRowHeader === null ? '' : `, ${yearPastRowHeader}`
+    const statusText = isPassed ? ' (passed)' : ''
+    return `Age ${age}, week ${weekInYear}${yearText}${statusText}`
   }
 
   interface GridRow {
@@ -166,12 +160,14 @@
 
         const isPassed = weekIndex <= passedWeeks
         const isCurrent = currentWeek !== null && weekIndex === currentWeek
+        const weekYear = validDob ? getWeekStartDate(validDob, weekIndex).getFullYear() : null
+        const yearPastRowHeader = weekYear === calendarYear ? null : weekYear
 
         weeks.push({
           index: weekIndex,
           isPassed,
           isCurrent,
-          ariaLabel: describeWeek(weekIndex, validDob, isPassed, isCurrent),
+          ariaLabel: describeWeek(weekIndex, isPassed, yearPastRowHeader),
         })
       }
 
@@ -401,6 +397,7 @@
               data-week={week.index}
               tabindex={rovingWeek === week.index ? 0 : -1}
               aria-selected={selectedWeek === week.index}
+              aria-current={week.isCurrent ? 'date' : undefined}
               aria-label={week.ariaLabel}
             ></div>
           {/each}

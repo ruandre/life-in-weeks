@@ -216,3 +216,27 @@ describe('timeline grid selection', () => {
     expect(isNotCancelled).toBe(false)
   })
 })
+
+describe('timeline grid week labels', () => {
+  const CURRENT_WEEK = 3 * 52 + 1
+
+  it('marks the current week with aria-current instead of label text', () => {
+    renderGrid()
+
+    expect(week(CURRENT_WEEK).getAttribute('aria-current')).toBe('date')
+    expect(week(CURRENT_WEEK).getAttribute('aria-label')).toBe('Age 3, week 1')
+    expect(week(CURRENT_WEEK + 1).hasAttribute('aria-current')).toBe(false)
+  })
+
+  it('leaves the year to the row header when the week falls in it', () => {
+    renderGrid({ dob: '2000-07-01' })
+
+    expect(week(1).getAttribute('aria-label')).toBe('Age 0, week 1 (passed)')
+  })
+
+  it('names the year when the week falls past the row header year', () => {
+    renderGrid({ dob: '2000-07-01' })
+
+    expect(week(30).getAttribute('aria-label')).toBe('Age 0, week 30, 2001 (passed)')
+  })
+})
