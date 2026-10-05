@@ -90,3 +90,45 @@ describe('timeline grid tooltip', () => {
     expect(tooltip().getAttribute('aria-hidden')).toBe('true')
   })
 })
+
+describe('timeline grid keyboard navigation', () => {
+  async function press(key: string, from: number): Promise<void> {
+    week(from).focus()
+    await fireEvent.focusIn(week(from))
+    await fireEvent.keyDown(week(from), { key })
+  }
+
+  it('moves five rows with PageDown and makes the target the tab stop', async () => {
+    renderGrid()
+
+    await press('PageDown', 3)
+
+    expect(document.activeElement).toBe(week(5 * 52 + 3))
+    expect(week(5 * 52 + 3).tabIndex).toBe(0)
+    expect(week(3).tabIndex).toBe(-1)
+  })
+
+  it('stops PageDown at the last row in the same column', async () => {
+    renderGrid()
+
+    await press('PageDown', 7 * 52 + 3)
+
+    expect(document.activeElement).toBe(week(9 * 52 + 3))
+  })
+
+  it('stops PageUp at the first row in the same column', async () => {
+    renderGrid()
+
+    await press('PageUp', 2 * 52 + 3)
+
+    expect(document.activeElement).toBe(week(3))
+  })
+
+  it('does not move past the grid edge with arrow keys', async () => {
+    renderGrid()
+
+    await press('ArrowUp', 3)
+
+    expect(document.activeElement).toBe(week(3))
+  })
+})

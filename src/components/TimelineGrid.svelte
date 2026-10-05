@@ -192,6 +192,28 @@
     onWarmUp()
   }
 
+  const PAGE_ROWS = 5
+
+  function findTargetWeek(key: string, week: number): number | null {
+    const row = Math.floor((week - 1) / WEEKS_PER_YEAR)
+    const column = (week - 1) % WEEKS_PER_YEAR
+    const lastRow = Math.ceil((timeline?.totalWeeks ?? 0) / WEEKS_PER_YEAR) - 1
+    const weekInRow = (targetRow: number) =>
+      Math.min(Math.max(targetRow, 0), lastRow) * WEEKS_PER_YEAR + column + 1
+
+    const moves: Record<string, () => number> = {
+      ArrowRight: () => week + 1,
+      ArrowLeft: () => week - 1,
+      ArrowDown: () => week + WEEKS_PER_YEAR,
+      ArrowUp: () => week - WEEKS_PER_YEAR,
+      PageDown: () => weekInRow(row + PAGE_ROWS),
+      PageUp: () => weekInRow(row - PAGE_ROWS),
+      Home: () => week - column,
+      End: () => week + WEEKS_PER_YEAR - 1 - column,
+    }
+    return moves[key]?.() ?? null
+  }
+
   function handleKeydown(e: KeyboardEvent): void {
     const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
     if (!target || !gridEl)
@@ -200,29 +222,10 @@
     const currentWeek = Number(target.dataset.week)
     if (!Number.isInteger(currentWeek))
       return
-    const column = (currentWeek - 1) % WEEKS_PER_YEAR
 
-    let delta = 0
-    if (e.key === 'ArrowRight')
-      delta = 1
-    else if (e.key === 'ArrowLeft')
-      delta = -1
-    else if (e.key === 'ArrowDown')
-      delta = WEEKS_PER_YEAR
-    else if (e.key === 'ArrowUp')
-      delta = -WEEKS_PER_YEAR
-    else if (e.key === 'PageDown')
-      delta = WEEKS_PER_YEAR * 5
-    else if (e.key === 'PageUp')
-      delta = -WEEKS_PER_YEAR * 5
-    else if (e.key === 'Home')
-      delta = -column
-    else if (e.key === 'End')
-      delta = WEEKS_PER_YEAR - 1 - column
-    else
+    const targetWeek = findTargetWeek(e.key, currentWeek)
+    if (targetWeek === null)
       return
-
-    const targetWeek = currentWeek + delta
     const targetEl = gridEl.querySelector<HTMLButtonElement>(`.week[data-week="${targetWeek}"]`)
     if (!targetEl)
       return
