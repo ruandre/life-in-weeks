@@ -27,29 +27,60 @@ export function renderInline(text: string): string {
 
 const MARKER_ONLY = /^\s*(?:#{1,6}|[-*]|\d+[.)])\s*$/
 const HEADING = /^(#{1,6})\s+(.*)/
-const BULLET_ITEM = /^[-*]\s+(.*)/
-const NUMBERED_ITEM = /^\d+[.)]\s+(.*)/
+const LIST_ITEM = /^(\s*)(?:([-*])|\d+[.)])\s+(.*)/
 
 type ListTag = 'ul' | 'ol'
+
+interface List {
+  tag: ListTag
+  indent: number
+  items: string[]
+}
+
+function renderList({ tag, items }: List): string {
+  return `<${tag}>${items.map(item => `<li>${item}</li>`).join('')}</${tag}>`
+}
 
 // Escapes before markup; model output untrusted
 export function renderMarkdown(text: string): string {
   const lines = text.replace(/\r\n/g, '\n').split('\n')
   const html: string[] = []
-  let list: { tag: ListTag, items: string[] } | null = null
+  let list: List | null = null
+  // One nesting level; deeper indentation flattens into it
+  let nested: List | null = null
 
-  const flushList = (): void => {
-    if (list) {
-      html.push(`<${list.tag}>${list.items.join('')}</${list.tag}>`)
-      list = null
-    }
+  const flushNested = (): void => {
+    if (list && nested)
+      list.items[list.items.length - 1] += renderList(nested)
+    nested = null
   }
 
-  const addListItem = (tag: ListTag, content: string): void => {
+  const flushList = (): void => {
+    flushNested()
+    if (list)
+      html.push(renderList(list))
+    list = null
+  }
+
+  const addTopLevelItem = (tag: ListTag, indent: number, item: string): void => {
+    flushNested()
     if (list?.tag !== tag)
       flushList()
-    list ??= { tag, items: [] }
-    list.items.push(`<li>${renderInline(content)}</li>`)
+    list ??= { tag, indent, items: [] }
+    list.items.push(item)
+  }
+
+  const addNestedItem = (tag: ListTag, indent: number, item: string): void => {
+    if (nested?.tag !== tag)
+      flushNested()
+    nested ??= { tag, indent, items: [] }
+    nested.items.push(item)
+  }
+
+  const addListItem = (tag: ListTag, indent: number, item: string): void => {
+    const isNested = list !== null && indent > list.indent
+    const addItem = isNested ? addNestedItem : addTopLevelItem
+    addItem(tag, indent, item)
   }
 
   for (const line of lines) {
@@ -58,19 +89,16 @@ export function renderMarkdown(text: string): string {
       continue
 
     const heading = line.match(HEADING)
-    const bulletItem = line.match(BULLET_ITEM)
-    const numberedItem = line.match(NUMBERED_ITEM)
+    const listItem = line.match(LIST_ITEM)
 
     if (heading) {
       flushList()
       const level = heading[1].length >= 3 ? 4 : 3
       html.push(`<h${level}>${renderInline(heading[2])}</h${level}>`)
     }
-    else if (bulletItem) {
-      addListItem('ul', bulletItem[1])
-    }
-    else if (numberedItem) {
-      addListItem('ol', numberedItem[1])
+    else if (listItem) {
+      const [, indent, bullet, content] = listItem
+      addListItem(bullet ? 'ul' : 'ol', indent.length, renderInline(content))
     }
     else if (line.trim() === '') {
       flushList()

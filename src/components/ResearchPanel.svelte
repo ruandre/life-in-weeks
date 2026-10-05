@@ -309,6 +309,11 @@
     padding-left: 0;
   }
 
+  .research-content :global(li > :is(ul, ol)) {
+    margin-top: var(--space-2);
+    margin-bottom: 0;
+  }
+
   .research-content :global(li) {
     margin-bottom: var(--space-2);
     padding-left: var(--space-4);

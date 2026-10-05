@@ -99,6 +99,22 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('1. <b>x</b>')).toBe('<ol><li>&lt;b&gt;x&lt;/b&gt;</li></ol>')
   })
 
+  it('nests indented bullets under the previous item', () => {
+    expect(renderMarkdown('- a\n  - b\n- c')).toBe('<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>')
+  })
+
+  it('keeps numbering across nested bullets', () => {
+    expect(renderMarkdown('1. a\n   - b\n2. c')).toBe('<ol><li>a<ul><li>b</li></ul></li><li>c</li></ol>')
+  })
+
+  it('flattens deeper indentation into the nested list', () => {
+    expect(renderMarkdown('- a\n  - b\n    - c')).toBe('<ul><li>a<ul><li>b</li><li>c</li></ul></li></ul>')
+  })
+
+  it('treats indented items without a parent as a top-level list', () => {
+    expect(renderMarkdown('  - a\n  - b')).toBe('<ul><li>a</li><li>b</li></ul>')
+  })
+
   it('renders paragraphs and separates lists from paragraphs', () => {
     const input = 'Intro text.\n\n- Item 1\n\nOutro text.'
     expect(renderMarkdown(input)).toBe(
