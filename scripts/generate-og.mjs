@@ -248,10 +248,4 @@ const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer()
 await fs.writeFile('public/og-image.png', pngBuffer)
 console.log('Wrote public/og-image.png', pngBuffer.length, 'bytes')
 
-await fs.mkdir('dist', { recursive: true }).catch(() => {})
-try {
-  await fs.writeFile('dist/og-image.png', pngBuffer)
-  await fs.writeFile('dist/og-image.svg', svg)
-}
-catch {}
 console.log('Done')
