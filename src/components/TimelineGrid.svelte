@@ -70,15 +70,13 @@
   }
 
   const GAP = 2
-  const YEAR_LABEL_WIDTH = 38
 
   // Integer size guarantees 1:1 square ratio; eliminates subpixel gap rounding
   const cellSize = $derived.by(() => {
     if (!wrapperWidth || !wrapperHeight || !lifespan)
       return 10
 
-    const availableW = wrapperWidth - YEAR_LABEL_WIDTH - GAP
-    const maxCellW = Math.floor((availableW - (WEEKS_PER_YEAR - 1) * GAP) / WEEKS_PER_YEAR)
+    const maxCellW = Math.floor((wrapperWidth - (WEEKS_PER_YEAR - 1) * GAP) / WEEKS_PER_YEAR)
 
     const availableH = wrapperHeight
     const maxCellH = Math.floor((availableH - (lifespan - 1) * GAP) / lifespan)
@@ -369,7 +367,6 @@
       aria-label='Life in weeks'
       style:--lifespan={lifespan}
       style:--cell-size='{cellSize}px'
-      style:--year-col-width='{YEAR_LABEL_WIDTH}px'
       style:--gap='{GAP}px'
       onkeydown={handleKeydown}
       onclick={handleGridClick}
@@ -384,7 +381,8 @@
     >
       {#each gridRows as row (row.yearIndex)}
         <div role='row' class='grid-row'>
-          <div role='rowheader' class='year-label'>{row.yearLabel}</div>
+          <!-- Hidden visually; screen readers still need the row's year -->
+          <div role='rowheader' class='visually-hidden'>{row.yearLabel}</div>
           {#each row.weeks as week (week.index)}
             <!-- Per-cell deriveds: selection or focus change re-runs only cells whose value flipped -->
             {@const isSelected = selectedWeek === week.index}
@@ -466,7 +464,7 @@
 
   .timeline {
     display: grid;
-    grid-template-columns: var(--year-col-width, 38px) repeat(52, var(--cell-size, 10px));
+    grid-template-columns: repeat(52, var(--cell-size, 10px));
     grid-template-rows: repeat(var(--lifespan, 70), var(--cell-size, 10px));
     gap: var(--gap, 2px);
     width: fit-content;
@@ -484,22 +482,6 @@
   /* Rows exist for ARIA only; cells stay items of .timeline grid */
   .grid-row {
     display: contents;
-  }
-
-  .year-label {
-    width: var(--year-col-width, 38px);
-    height: var(--cell-size, 10px);
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-right: 6px;
-    font-size: clamp(7px, calc(var(--cell-size, 10px) * 0.85), 11px);
-    line-height: 1;
-    color: var(--grey);
-    font-family: monospace;
-    user-select: none;
-    white-space: nowrap;
-    box-sizing: border-box;
   }
 
   .timeline.loaded {
