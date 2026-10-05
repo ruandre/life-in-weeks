@@ -52,14 +52,16 @@
 >
   <div class='stat-group'>
     <dt class='stat-label'>WEEKS LIVED</dt>
-    <dd class='stat-value accent' id='lived' aria-hidden='true'>
-      {displayedLivedText}
+    <dd class='stat-value accent' id='lived'>
+      <span aria-hidden='true'>{displayedLivedText}</span>
+      <span class='visually-hidden'>{targetLived.toLocaleString()}</span>
     </dd>
   </div>
   <div class='stat-group'>
     <dt class='stat-label'>PROGRESS</dt>
-    <dd class='stat-value' id='progress' aria-hidden='true'>
-      {displayedProgressText}
+    <dd class='stat-value' id='progress'>
+      <span aria-hidden='true'>{displayedProgressText}</span>
+      <span class='visually-hidden'>{targetProgress.toFixed(1)}%</span>
     </dd>
   </div>
 </dl>
