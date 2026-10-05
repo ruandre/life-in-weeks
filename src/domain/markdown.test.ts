@@ -103,6 +103,16 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('1. <b>x</b>')).toBe('<ol><li>&lt;b&gt;x&lt;/b&gt;</li></ol>')
   })
 
+  it('escapes HTML inside headings', () => {
+    expect(renderMarkdown('## <script>x</script>')).toBe('<h3>&lt;script&gt;x&lt;/script&gt;</h3>')
+  })
+
+  it('escapes HTML inside paragraphs', () => {
+    expect(renderMarkdown('<img src=x onerror="alert(1)">')).toBe(
+      '<p>&lt;img src=x onerror=&quot;alert(1)&quot;&gt;</p>',
+    )
+  })
+
   it('nests indented bullets under the previous item', () => {
     expect(renderMarkdown('- a\n  - b\n- c')).toBe('<ul><li>a<ul><li>b</li></ul></li><li>c</li></ul>')
   })
