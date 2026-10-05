@@ -47,6 +47,10 @@ describe('renderInline', () => {
     expect(renderInline('***both***')).toBe('<em><strong>both</strong></em>')
   })
 
+  it('never interleaves bold and italic tags', () => {
+    expect(renderInline('**bold *ital** end*')).toBe('<strong>bold *ital</strong> end*')
+  })
+
   it('keeps separate bold spans apart', () => {
     expect(renderInline('**a** and **b**')).toBe('<strong>a</strong> and <strong>b</strong>')
   })

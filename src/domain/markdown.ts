@@ -10,10 +10,23 @@ export function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, char => ESCAPE_MAP[char] || char)
 }
 
+function hasBalancedStrong(html: string): boolean {
+  let depth = 0
+  for (const [tag] of html.matchAll(/<\/?strong>/g)) {
+    depth += tag === '<strong>' ? 1 : -1
+    if (depth < 0)
+      return false
+  }
+  return depth === 0
+}
+
 function renderEmphasis(html: string): string {
   return html
     .replace(/\*\*(?=[^\s*])(.*?[^\s*])\*\*/g, '<strong>$1</strong>')
-    .replace(/(?<!\*)\*(?=\S)([^*]*\S)\*(?!\*)/g, '<em>$1</em>')
+    .replace(
+      /(?<!\*)\*(?=\S)([^*]*\S)\*(?!\*)/g,
+      (match, inner: string) => hasBalancedStrong(inner) ? `<em>${inner}</em>` : match,
+    )
 }
 
 export function renderInline(text: string): string {
