@@ -33,13 +33,13 @@
     }
   }
 
-  /* :is() enables forgiving parsing for WebMCP pseudo-classes */
-  form:is(:tool-form-active) {
+  /* WebMCP-only pseudo-classes; other browsers drop each rule. Build warns; :is() would be unwrapped anyway */
+  form:tool-form-active {
     outline: 2px dashed var(--accent);
     outline-offset: 4px;
   }
 
-  button:is(:tool-submit-active) {
+  button:tool-submit-active {
     outline: 2px dashed var(--accent);
     animation: 1.5s ease-in-out infinite pulse;
   }
