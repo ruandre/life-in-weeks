@@ -32,6 +32,11 @@ describe('parseLocalDate', () => {
     expect(parseLocalDate(undefined as any)).toBeNull()
   })
 
+  // new Date() would read these as instants and land on the previous day west of UTC
+  it.each(['2000-01-01T00:00:00Z', 'March 15, 2024', '2024/03/15'])('rejects non-ISO calendar date %s', (input) => {
+    expect(parseLocalDate(input)).toBeNull()
+  })
+
   it('parses years 0-99 literally, not as 1900s', () => {
     const d = parseLocalDate('0050-03-04')
     expect(d).not.toBeNull()

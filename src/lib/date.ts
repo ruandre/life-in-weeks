@@ -17,7 +17,7 @@ export function localMidnight(year: number, monthIndex: number, day: number): Da
   return date
 }
 
-/** Parses to local midnight; new Date(str) shifts day by UTC offset */
+/** Parses YYYY-MM-DD to local midnight; new Date(str) shifts day by UTC offset */
 export function parseLocalDate(dateStr: string): Date | null {
   if (!dateStr || typeof dateStr !== 'string')
     return null
@@ -31,19 +31,15 @@ export function parseLocalDate(dateStr: string): Date | null {
   }
 
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (match) {
-    const year = Number(match[1])
-    const month = Number(match[2]) - 1
-    const day = Number(match[3])
-    const d = localMidnight(year, month, day)
-    if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
-      return d
-    }
+  if (!match)
     return null
-  }
 
-  const fallback = new Date(dateStr)
-  return Number.isNaN(fallback.getTime()) ? null : fallback
+  const year = Number(match[1])
+  const month = Number(match[2]) - 1
+  const day = Number(match[3])
+  const d = localMidnight(year, month, day)
+  const isRealDate = d.getFullYear() === year && d.getMonth() === month && d.getDate() === day
+  return isRealDate ? d : null
 }
 
 export function formatLocalIsoDate(date: Date): string {
