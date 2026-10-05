@@ -1,5 +1,6 @@
 <script lang='ts'>
   import type { Timeline } from '../domain/timeline'
+  import { prefersReducedMotion } from 'svelte/motion'
   import { WEEKS_PER_YEAR } from '../config/constants'
   import { getWeekAge, getWeekStartDate } from '../domain/timeline'
   import { parseLocalDate } from '../lib/date'
@@ -240,7 +241,8 @@
       focusedWeek = weekIndex
       onSelectWeek(weekIndex)
       if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
-        document.getElementById('research-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        const behavior = prefersReducedMotion.current ? 'auto' : 'smooth'
+        document.getElementById('research-panel')?.scrollIntoView({ behavior, block: 'start' })
       }
     }
   }
