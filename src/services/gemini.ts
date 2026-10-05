@@ -8,13 +8,20 @@ export const RECOMMENDED_MODELS: GeminiModel[] = [
 
 export const DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash'
 
+// Mid-stream errors prefix the payload with "got status: …"
+function sliceJsonObject(text: string): string {
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  return start === -1 || end < start ? text : text.slice(start, end + 1)
+}
+
 export function formatGeminiError(err: unknown): string {
   if (err && typeof err === 'object' && 'message' in err) {
     let msg = String(err.message)
     // Google API error payloads may nest JSON strings
     for (let i = 0; i < 4; i++) {
       try {
-        const parsed = JSON.parse(msg)
+        const parsed = JSON.parse(sliceJsonObject(msg))
         if (typeof parsed?.error?.message === 'string')
           msg = parsed.error.message
         else if (typeof parsed?.message === 'string')

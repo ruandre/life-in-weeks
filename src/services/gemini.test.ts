@@ -79,6 +79,16 @@ describe('formatGeminiError', () => {
     expect(formatGeminiError(apiError(inner))).toBe('model overloaded')
   })
 
+  it('unwraps a mid-stream error with a status prefix', () => {
+    const payload = JSON.stringify({ error: { code: 429, message: 'Quota exceeded', status: 'RESOURCE_EXHAUSTED' } })
+
+    expect(formatGeminiError(new Error(`got status: RESOURCE_EXHAUSTED. ${payload}`))).toBe('Quota exceeded')
+  })
+
+  it('keeps a message with braces that are not JSON', () => {
+    expect(formatGeminiError(new Error('bad {value} here'))).toBe('bad {value} here')
+  })
+
   it('unwraps a JSON payload with a top-level message', () => {
     const err = new Error(JSON.stringify({ message: 'bad request' }))
 
