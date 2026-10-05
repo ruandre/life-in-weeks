@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/svelte'
+import { fireEvent, render, screen, within } from '@testing-library/svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { calculateTimeline } from '../domain/timeline'
 import { parseLocalDate } from '../lib/date'
@@ -17,6 +17,8 @@ vi.hoisted(() => {
     removeListener: () => {},
     dispatchEvent: () => false,
   })
+  // jsdom lacks scrollIntoView; grid scrolls selected week into view
+  Element.prototype.scrollIntoView = () => {}
 })
 
 const DOB = '2000-01-01'
@@ -33,20 +35,22 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function renderGrid() {
-  const timeline = calculateTimeline(parseLocalDate(DOB)!, LIFESPAN_YEARS, new Date(2003, 0, 1))
-  render(TimelineGrid, {
-    props: {
-      timeline,
-      dob: DOB,
-      lifespan: LIFESPAN_YEARS,
-      hasGenerated: true,
-      isLoaded: true,
-      selectedWeek: null,
-      onSelectWeek: vi.fn(),
-      onWarmUp: vi.fn(),
-    },
-  })
+function renderGrid({ dob = DOB, selectedWeek = null as number | null } = {}) {
+  const timeline = calculateTimeline(parseLocalDate(dob)!, LIFESPAN_YEARS, new Date(2003, 0, 1))
+  const onSelectWeek = vi.fn()
+  const props = {
+    timeline,
+    dob,
+    lifespan: LIFESPAN_YEARS,
+    hasGenerated: true,
+    isLoaded: true,
+    selectedWeek,
+    onSelectWeek,
+    onWarmUp: vi.fn(),
+  }
+  const { rerender } = render(TimelineGrid, { props })
+  const selectWeek = (weekIndex: number) => rerender({ ...props, selectedWeek: weekIndex })
+  return { onSelectWeek, selectWeek }
 }
 
 function week(index: number): HTMLElement {
@@ -130,5 +134,69 @@ describe('timeline grid keyboard navigation', () => {
     await press('ArrowUp', 3)
 
     expect(document.activeElement).toBe(week(3))
+  })
+})
+
+describe('timeline grid semantics', () => {
+  it('exposes one row per year of age with a year header and 52 cells', () => {
+    renderGrid()
+
+    const rows = within(screen.getByRole('grid', { name: 'Life in weeks' })).getAllByRole('row')
+
+    expect(rows).toHaveLength(LIFESPAN_YEARS)
+    expect(within(rows[3]!).getByRole('rowheader').textContent).toBe('2003')
+    expect(within(rows[3]!).getAllByRole('gridcell')).toHaveLength(52)
+  })
+
+  it('marks only the selected week as selected', async () => {
+    const { selectWeek } = renderGrid()
+
+    await selectWeek(60)
+
+    expect(week(60).getAttribute('aria-selected')).toBe('true')
+    expect(week(61).getAttribute('aria-selected')).toBe('false')
+  })
+
+  it('keeps one tab stop when a week is selected', async () => {
+    const { selectWeek } = renderGrid()
+
+    await selectWeek(60)
+
+    expect(document.querySelectorAll('.week[tabindex="0"]')).toHaveLength(1)
+  })
+})
+
+describe('timeline grid selection', () => {
+  it('selects the clicked week', async () => {
+    const { onSelectWeek } = renderGrid()
+
+    await fireEvent.click(week(12))
+
+    expect(onSelectWeek).toHaveBeenCalledWith(12)
+  })
+
+  it.each(['Enter', ' '])('selects the focused week with %j', async (key) => {
+    const { onSelectWeek } = renderGrid()
+    week(12).focus()
+
+    await fireEvent.keyDown(week(12), { key })
+
+    expect(onSelectWeek).toHaveBeenCalledWith(12)
+  })
+
+  it('ignores auto-repeated activation keys', async () => {
+    const { onSelectWeek } = renderGrid()
+
+    await fireEvent.keyDown(week(12), { key: 'Enter', repeat: true })
+
+    expect(onSelectWeek).not.toHaveBeenCalled()
+  })
+
+  it('stops Space from scrolling the page', async () => {
+    renderGrid()
+
+    const isNotCancelled = await fireEvent.keyDown(week(12), { key: ' ' })
+
+    expect(isNotCancelled).toBe(false)
   })
 })

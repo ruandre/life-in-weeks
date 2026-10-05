@@ -215,8 +215,10 @@
     return moves[key]?.() ?? null
   }
 
+  const ACTIVATION_KEYS = new Set(['Enter', ' '])
+
   function handleKeydown(e: KeyboardEvent): void {
-    const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
+    const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (!target || !gridEl)
       return
 
@@ -224,10 +226,18 @@
     if (!Number.isInteger(currentWeek))
       return
 
+    if (ACTIVATION_KEYS.has(e.key)) {
+      // Space would scroll the page; repeats would restart research every tick
+      e.preventDefault()
+      if (!e.repeat)
+        selectWeek(currentWeek)
+      return
+    }
+
     const targetWeek = findTargetWeek(e.key, currentWeek)
     if (targetWeek === null)
       return
-    const targetEl = gridEl.querySelector<HTMLButtonElement>(`.week[data-week="${targetWeek}"]`)
+    const targetEl = gridEl.querySelector<HTMLElement>(`.week[data-week="${targetWeek}"]`)
     if (!targetEl)
       return
 
@@ -236,23 +246,25 @@
     targetEl.focus()
   }
 
-  function handleGridClick(e: MouseEvent): void {
-    const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
-    if (!target)
+  function selectWeek(weekIndex: number): void {
+    if (!Number.isInteger(weekIndex) || weekIndex < 1)
       return
-    const weekIndex = Number(target.dataset.week)
-    if (Number.isInteger(weekIndex) && weekIndex >= 1) {
-      focusedWeek = weekIndex
-      onSelectWeek(weekIndex)
-      if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
-        const behavior = prefersReducedMotion.current ? 'auto' : 'smooth'
-        document.getElementById('research-panel')?.scrollIntoView({ behavior, block: 'start' })
-      }
+    focusedWeek = weekIndex
+    onSelectWeek(weekIndex)
+    if (window.innerWidth <= 1024) {
+      const behavior = prefersReducedMotion.current ? 'auto' : 'smooth'
+      document.getElementById('research-panel')?.scrollIntoView({ behavior, block: 'start' })
     }
   }
 
+  function handleGridClick(e: MouseEvent): void {
+    const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
+    if (target)
+      selectWeek(Number(target.dataset.week))
+  }
+
   function handlePointerOver(e: MouseEvent): void {
-    const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
+    const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (!target)
       return
     const weekIndex = Number(target.dataset.week)
@@ -280,7 +292,7 @@
   }
 
   function handlePointerOut(e: MouseEvent): void {
-    const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
+    const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (target) {
       tooltipVisible = false
     }
@@ -288,7 +300,7 @@
 
   function handleFocusIn(e: FocusEvent): void {
     warmOnce()
-    const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
+    const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (!target)
       return
     const weekIndex = Number(target.dataset.week)
@@ -315,7 +327,7 @@
   }
 
   function handleFocusOut(e: FocusEvent): void {
-    const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
+    const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (target) {
       tooltipVisible = false
     }
@@ -324,7 +336,7 @@
   $effect(() => {
     if (!selectedWeek || !gridEl)
       return
-    const weekEl = gridEl.querySelector<HTMLButtonElement>(`.week[data-week="${selectedWeek}"]`)
+    const weekEl = gridEl.querySelector<HTMLElement>(`.week[data-week="${selectedWeek}"]`)
     weekEl?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   })
 </script>
@@ -346,13 +358,14 @@
     {@attach observeSize}
     class='timeline-wrapper'
   >
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <!-- Roving tabindex on cells; grid itself must not be a tab or click focus target -->
+    <!-- svelte-ignore a11y_interactive_supports_focus -->
     <div
       bind:this={gridEl}
       class={['timeline', isLoaded && 'loaded']}
       id='grid'
-      role='group'
-      aria-label='Life in weeks grid'
+      role='grid'
+      aria-label='Life in weeks'
       style:--lifespan={lifespan}
       style:--cell-size='{cellSize}px'
       style:--year-col-width='{YEAR_LABEL_WIDTH}px'
@@ -369,22 +382,24 @@
       onfocusout={handleFocusOut}
     >
       {#each gridRows as row (row.yearIndex)}
-        <div class='year-label' aria-hidden='true'>{row.yearLabel}</div>
-        {#each row.weeks as week (week.index)}
-          <button
-            type='button'
-            class={[
-              'week',
-              week.isPassed && 'passed',
-              week.isCurrent && 'current',
-              selectedWeek === week.index && 'selected',
-            ]}
-            data-week={week.index}
-            tabindex={rovingWeek === week.index ? 0 : -1}
-            aria-pressed={selectedWeek === week.index ? 'true' : 'false'}
-            aria-label={week.ariaLabel}
-          ></button>
-        {/each}
+        <div role='row' class='grid-row'>
+          <div role='rowheader' class='year-label'>{row.yearLabel}</div>
+          {#each row.weeks as week (week.index)}
+            <div
+              role='gridcell'
+              class={[
+                'week',
+                week.isPassed && 'passed',
+                week.isCurrent && 'current',
+                selectedWeek === week.index && 'selected',
+              ]}
+              data-week={week.index}
+              tabindex={rovingWeek === week.index ? 0 : -1}
+              aria-selected={selectedWeek === week.index}
+              aria-label={week.ariaLabel}
+            ></div>
+          {/each}
+        </div>
       {/each}
     </div>
   </div>
@@ -461,6 +476,11 @@
     isolation: isolate;
   }
 
+  /* Rows exist for ARIA only; cells stay items of .timeline grid */
+  .grid-row {
+    display: contents;
+  }
+
   .year-label {
     width: var(--year-col-width, 38px);
     height: var(--cell-size, 10px);
@@ -487,13 +507,9 @@
     height: var(--cell-size, 10px);
     aspect-ratio: 1 / 1;
     box-sizing: border-box;
-    appearance: none;
-    font: inherit;
-    background: transparent;
     border: 1px solid var(--control-border);
     cursor: pointer;
     forced-color-adjust: none;
-    padding: 0;
     transition:
       transform 0.2s var(--ease-out-quint),
       background-color 0.2s var(--ease-out-quint),
