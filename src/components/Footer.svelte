@@ -47,8 +47,8 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    min-block-size: 20px;
-    padding-block: 2px;
+    /* WCAG 2.5.8 minimum target */
+    min-block-size: 24px;
     color: var(--grey);
     font-size: 0.6875rem;
     letter-spacing: 0.06em;

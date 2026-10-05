@@ -164,6 +164,7 @@
       display: inline-flex;
       align-items: center;
       gap: var(--space-2);
+      min-block-size: 24px;
       margin-bottom: var(--space-3);
       color: var(--grey);
       font-size: 0.75rem;
