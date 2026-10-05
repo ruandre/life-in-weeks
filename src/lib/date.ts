@@ -10,7 +10,7 @@ export const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat('en-US', {
 })
 
 // setFullYear avoids Date's 0–99 → 1900s mapping
-function localMidnight(year: number, monthIndex: number, day: number): Date {
+export function localMidnight(year: number, monthIndex: number, day: number): Date {
   const date = new Date(0)
   date.setFullYear(year, monthIndex, day)
   date.setHours(0, 0, 0, 0)

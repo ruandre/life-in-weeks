@@ -1,4 +1,5 @@
 import { MILLISECONDS_PER_DAY, WEEKS_PER_YEAR } from '../config/constants'
+import { localMidnight } from '../lib/date'
 
 export { WEEKS_PER_YEAR } from '../config/constants'
 
@@ -18,18 +19,23 @@ const DAYS_PER_WEEK = 7
 
 // Calendar arithmetic keeps local midnight across DST changes
 function addDays(date: Date, days: number): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+  return localMidnight(date.getFullYear(), date.getMonth(), date.getDate() + days)
 }
 
 // Feb 29 birthdays fall on Mar 1 in common years
 function getBirthday(dobDate: Date, age: number): Date {
-  return new Date(dobDate.getFullYear() + age, dobDate.getMonth(), dobDate.getDate())
+  return localMidnight(dobDate.getFullYear() + age, dobDate.getMonth(), dobDate.getDate())
+}
+
+// setUTCFullYear avoids Date.UTC's 0–99 → 1900s mapping
+function utcDayStart(date: Date): number {
+  const utc = new Date(0)
+  utc.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate())
+  return utc.getTime()
 }
 
 function calendarDaysBetween(from: Date, to: Date): number {
-  const fromUtc = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate())
-  const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate())
-  return Math.round((toUtc - fromUtc) / MILLISECONDS_PER_DAY)
+  return Math.round((utcDayStart(to) - utcDayStart(from)) / MILLISECONDS_PER_DAY)
 }
 
 function getAgeInYears(dobDate: Date, now: Date): number {

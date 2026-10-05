@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { formatLocalIsoDate, parseLocalDate } from '../lib/date'
 import {
   calculateTimeline,
   getWeekAge,
@@ -59,6 +60,18 @@ describe('calculateTimeline', () => {
     expect(result.currentWeek).toBeNull()
   })
 
+  it('counts weeks for a birth year 0–99 as written', () => {
+    const dob = parseLocalDate('0050-01-01')!
+    const result = calculateTimeline(dob, 80, parseLocalDate('0051-01-01')!)
+    expect(result.passedWeeks).toBe(WEEKS_PER_YEAR)
+  })
+
+  it('counts days across the year 99 to 100 boundary', () => {
+    const dob = parseLocalDate('0099-12-18')!
+    const result = calculateTimeline(dob, 80, parseLocalDate('0100-01-01')!)
+    expect(result.passedWeeks).toBe(2)
+  })
+
   it('caps passedWeeks at totalWeeks and sets currentWeek to null when lifespan exceeded', () => {
     const dob = new Date(1900, 0, 1)
     const result = calculateTimeline(dob, 50, new Date(2000, 0, 1))
@@ -88,6 +101,12 @@ describe('getWeekStartDate', () => {
     const dob = new Date(1990, 0, 5)
     expect(getWeekStartDate(dob, 40 * WEEKS_PER_YEAR + 1)).toEqual(new Date(2030, 0, 5))
   })
+
+  it('keeps years 0–99 literal instead of mapping them to the 1900s', () => {
+    const dob = parseLocalDate('0050-03-04')!
+    expect(formatLocalIsoDate(getWeekStartDate(dob, 2))).toBe('0050-03-11')
+    expect(formatLocalIsoDate(getWeekStartDate(dob, WEEKS_PER_YEAR + 1))).toBe('0051-03-04')
+  })
 })
 
 describe('getWeekEndDate', () => {
@@ -99,6 +118,11 @@ describe('getWeekEndDate', () => {
   it('ends the 52nd week the day before the next birthday', () => {
     const dob = new Date(2000, 0, 1)
     expect(getWeekEndDate(dob, 52)).toEqual(new Date(2000, 11, 31))
+  })
+
+  it('keeps years 0–99 literal', () => {
+    const dob = parseLocalDate('0050-03-04')!
+    expect(formatLocalIsoDate(getWeekEndDate(dob, 1))).toBe('0050-03-10')
   })
 })
 
