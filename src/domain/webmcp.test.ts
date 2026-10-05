@@ -92,12 +92,20 @@ describe('select_and_research_week', () => {
     expect(selectWeek).not.toHaveBeenCalled()
   })
 
-  it('reports weeks outside the timeline', async () => {
+  it.each([null, undefined, 'week', {}])('rejects arguments %o without selecting', async (args) => {
+    const selectWeek = vi.fn(async () => 'research')
+    init({ selectWeek })
+    const result = await toolNamed('select_and_research_week').execute(args)
+    expect(result).toMatch(/^Invalid week_index/)
+    expect(selectWeek).not.toHaveBeenCalled()
+  })
+
+  it('reports research cancelled by a newer selection', async () => {
     const selectWeek = vi.fn(async () => null)
     init({ selectWeek })
-    const result = await toolNamed('select_and_research_week').execute({ week_index: 9999 })
-    expect(selectWeek).toHaveBeenCalledWith(9999)
-    expect(result).toContain('outside the timeline')
+    const result = await toolNamed('select_and_research_week').execute({ week_index: 53 })
+    expect(selectWeek).toHaveBeenCalledWith(53)
+    expect(result).toContain('cancelled')
   })
 
   it('returns the research for a valid week', async () => {

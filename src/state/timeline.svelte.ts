@@ -149,7 +149,7 @@ export class TimelineState {
       return this.showFailure('error', 'Pick a week on the grid.')
 
     if (this.timeline && weekIndex > this.timeline.totalWeeks)
-      return null
+      return `Week ${weekIndex} is outside the timeline. Check the expected lifespan.`
 
     const dobDate = parseLocalDate(this.displayedDob)
     if (!dobDate)

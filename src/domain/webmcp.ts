@@ -5,6 +5,7 @@ import { calculateTimeline } from './timeline'
 export interface WebMCPOptions {
   getDob: () => string
   getLifespan: () => number
+  /** Resolves null when a newer selection supersedes this one */
   selectWeek: (weekIndex: number) => Promise<string | null>
 }
 
@@ -35,12 +36,13 @@ export function initWebMCP({ getDob, getLifespan, selectWeek }: WebMCPOptions): 
         },
         required: ['week_index'],
       },
-      execute: async ({ week_index }: { week_index: number }) => {
-        if (!Number.isInteger(week_index) || week_index < 1)
-          return `Invalid week_index ${week_index}: must be a positive integer.`
-        const result = await selectWeek(week_index)
+      execute: async (args?: { week_index?: unknown } | null) => {
+        const weekIndex = args?.week_index
+        if (typeof weekIndex !== 'number' || !Number.isInteger(weekIndex) || weekIndex < 1)
+          return `Invalid week_index ${String(weekIndex)}: must be a positive integer.`
+        const result = await selectWeek(weekIndex)
         if (result === null)
-          return `Week ${week_index} is outside the timeline. Check the expected lifespan.`
+          return `Research for week ${weekIndex} was cancelled because another week was selected.`
         return result
       },
     },

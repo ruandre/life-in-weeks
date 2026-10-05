@@ -163,11 +163,12 @@ describe('selectWeek outcomes', () => {
     expect(state.research.weekStart).toEqual(new Date(2000, 1, 19))
   })
 
-  it('ignores weeks outside the timeline', async () => {
+  it('reports weeks outside the timeline without selecting them', async () => {
     const state = generatedState()
 
-    expect(await state.selectWeek(70 * 52 + 1)).toBeNull()
+    expect(await state.selectWeek(70 * 52 + 1)).toContain('outside the timeline')
     expect(state.selectedWeek).toBeNull()
+    expect(state.research.status).toBe('idle')
   })
 
   it('reports unsupported when the browser has no local model', async () => {
