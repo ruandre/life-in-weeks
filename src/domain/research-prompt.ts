@@ -53,6 +53,7 @@ export function buildResearchPrompt({
     const localSection = country
       ? `## Outlook for ${year} in ${country}\n2-3 bullets on things already known or scheduled for ${year} specific to ${country} (elections, sports events, national milestones). Each bullet under 20 words. If nothing concrete is known, say that in one bullet instead of guessing.\n`
       : ''
+    // eslint-disable-next-line security/detect-object-injection -- tense is narrowed WeekTense union
     return `${intro} ${UNFINISHED_WEEK_NOTES[tense]}\nReturn markdown with exactly these sections, nothing else:\n${localSection}## Outlook for ${year}\n2-3 bullets on things already known or scheduled for ${year} globally (elections, sports events, tech/space milestones). Each bullet under 20 words. If nothing concrete is known, say that in one bullet instead of guessing.\n## Coming in ${year}\n2-3 bullets on culture already scheduled for ${year}: film and game releases, tours, tournaments, anniversaries. Each bullet under 20 words. If nothing concrete is known, say so in one bullet instead of guessing.\n${shared}`
   }
 

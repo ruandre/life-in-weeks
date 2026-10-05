@@ -7,6 +7,7 @@ const ESCAPE_MAP: Record<string, string> = {
 }
 
 export function escapeHtml(text: string): string {
+  // eslint-disable-next-line security/detect-object-injection -- regex limits char to map keys
   return text.replace(/[&<>"']/g, char => ESCAPE_MAP[char] || char)
 }
 

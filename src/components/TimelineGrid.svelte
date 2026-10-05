@@ -211,6 +211,7 @@
       Home: () => week - column,
       End: () => week + WEEKS_PER_YEAR - 1 - column,
     }
+    // eslint-disable-next-line security/detect-object-injection -- lookup on local literal map, unknown keys yield null
     return moves[key]?.() ?? null
   }
 
