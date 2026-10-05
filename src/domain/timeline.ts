@@ -59,7 +59,8 @@ export function calculateTimeline(
   now: Date = new Date(),
 ): Timeline {
   const totalWeeks = lifespanYears * WEEKS_PER_YEAR
-  if (totalWeeks <= 0) {
+  const hasValidInput = Number.isFinite(totalWeeks) && totalWeeks > 0 && !Number.isNaN(dobDate.getTime())
+  if (!hasValidInput) {
     return { totalWeeks: 0, passedWeeks: 0, currentWeek: null, progressPercent: 0 }
   }
 

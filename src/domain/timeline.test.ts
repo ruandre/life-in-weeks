@@ -25,6 +25,19 @@ describe('calculateTimeline', () => {
     })
   })
 
+  it.each([
+    ['an invalid date of birth', new Date(Number.NaN), 80],
+    ['a NaN lifespan', new Date(2000, 0, 1), Number.NaN],
+    ['an infinite lifespan', new Date(2000, 0, 1), Number.POSITIVE_INFINITY],
+  ])('returns an empty timeline for %s', (_, dob, lifespan) => {
+    expect(calculateTimeline(dob, lifespan, new Date(2020, 0, 1))).toEqual({
+      totalWeeks: 0,
+      passedWeeks: 0,
+      currentWeek: null,
+      progressPercent: 0,
+    })
+  })
+
   it('correctly computes passedWeeks and currentWeek at birth', () => {
     const dob = new Date(2000, 0, 1)
     const result = calculateTimeline(dob, 80, dob)
