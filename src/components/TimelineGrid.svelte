@@ -194,25 +194,30 @@
 
   const PAGE_ROWS = 5
 
-  function findTargetWeek(key: string, week: number): number | null {
+  function findTargetWeek({ key, ctrlKey }: Pick<KeyboardEvent, 'key' | 'ctrlKey'>, week: number): number | null {
+    const totalWeeks = timeline?.totalWeeks ?? 0
     const row = Math.floor((week - 1) / WEEKS_PER_YEAR)
     const column = (week - 1) % WEEKS_PER_YEAR
-    const lastRow = Math.ceil((timeline?.totalWeeks ?? 0) / WEEKS_PER_YEAR) - 1
+    const lastRow = Math.ceil(totalWeeks / WEEKS_PER_YEAR) - 1
     const weekInRow = (targetRow: number) =>
       Math.min(Math.max(targetRow, 0), lastRow) * WEEKS_PER_YEAR + column + 1
 
     const moves: Record<string, () => number> = {
-      ArrowRight: () => week + 1,
-      ArrowLeft: () => week - 1,
-      ArrowDown: () => week + WEEKS_PER_YEAR,
-      ArrowUp: () => week - WEEKS_PER_YEAR,
-      PageDown: () => weekInRow(row + PAGE_ROWS),
-      PageUp: () => weekInRow(row - PAGE_ROWS),
-      Home: () => week - column,
-      End: () => week + WEEKS_PER_YEAR - 1 - column,
+      'ArrowRight': () => week + 1,
+      'ArrowLeft': () => week - 1,
+      'ArrowDown': () => week + WEEKS_PER_YEAR,
+      'ArrowUp': () => week - WEEKS_PER_YEAR,
+      'PageDown': () => weekInRow(row + PAGE_ROWS),
+      'PageUp': () => weekInRow(row - PAGE_ROWS),
+      'Home': () => week - column,
+      'End': () => week + WEEKS_PER_YEAR - 1 - column,
+      'Ctrl+Home': () => 1,
+      'Ctrl+End': () => totalWeeks,
     }
+    const shortcut = ctrlKey ? `Ctrl+${key}` : key
+    // Ctrl+Arrow etc. fall back to the unmodified move
     // eslint-disable-next-line security/detect-object-injection -- lookup on local literal map, unknown keys yield null
-    return moves[key]?.() ?? null
+    return (moves[shortcut] ?? moves[key])?.() ?? null
   }
 
   const ACTIVATION_KEYS = new Set(['Enter', ' '])
@@ -234,7 +239,7 @@
       return
     }
 
-    const targetWeek = findTargetWeek(e.key, currentWeek)
+    const targetWeek = findTargetWeek(e, currentWeek)
     if (targetWeek === null)
       return
     const targetEl = gridEl.querySelector<HTMLElement>(`.week[data-week="${targetWeek}"]`)

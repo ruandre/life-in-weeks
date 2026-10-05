@@ -96,10 +96,10 @@ describe('timeline grid tooltip', () => {
 })
 
 describe('timeline grid keyboard navigation', () => {
-  async function press(key: string, from: number): Promise<void> {
+  async function press(key: string, from: number, modifiers: { ctrlKey?: boolean } = {}): Promise<void> {
     week(from).focus()
     await fireEvent.focusIn(week(from))
-    await fireEvent.keyDown(week(from), { key })
+    await fireEvent.keyDown(week(from), { key, ...modifiers })
   }
 
   it('moves five rows with PageDown and makes the target the tab stop', async () => {
@@ -126,6 +126,22 @@ describe('timeline grid keyboard navigation', () => {
     await press('PageUp', 2 * 52 + 3)
 
     expect(document.activeElement).toBe(week(3))
+  })
+
+  it('jumps to the first week with Ctrl+Home', async () => {
+    renderGrid()
+
+    await press('Home', 4 * 52 + 30, { ctrlKey: true })
+
+    expect(document.activeElement).toBe(week(1))
+  })
+
+  it('jumps to the last week with Ctrl+End', async () => {
+    renderGrid()
+
+    await press('End', 30, { ctrlKey: true })
+
+    expect(document.activeElement).toBe(week(LIFESPAN_YEARS * 52))
   })
 
   it('does not move past the grid edge with arrow keys', async () => {
