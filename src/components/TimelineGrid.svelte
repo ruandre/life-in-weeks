@@ -304,6 +304,12 @@
     tooltipVisible = true
   }
 
+  // WCAG 1.4.13: dismissible without moving pointer or focus
+  function handleWindowKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape' && tooltipVisible)
+      tooltipVisible = false
+  }
+
   function handleFocusOut(e: FocusEvent): void {
     const target = (e.target as HTMLElement)?.closest<HTMLButtonElement>('.week')
     if (target) {
@@ -318,6 +324,8 @@
     weekEl?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   })
 </script>
+
+<svelte:window onkeydown={handleWindowKeydown} />
 
 <main class='main-content' id='main-content' tabindex='-1'>
   {#if !hasGenerated}
