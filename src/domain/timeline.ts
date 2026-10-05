@@ -57,10 +57,11 @@ export function calculateTimeline(
     return { totalWeeks: 0, passedWeeks: 0, currentWeek: null, progressPercent: 0 }
   }
 
+  const isBorn = now >= dobDate
   const passedWeeks = Math.min(countPassedWeeks(dobDate, now), totalWeeks)
   const progressPercent = (passedWeeks / totalWeeks) * 100
 
-  const currentWeek = passedWeeks < totalWeeks ? passedWeeks + 1 : null
+  const currentWeek = isBorn && passedWeeks < totalWeeks ? passedWeeks + 1 : null
 
   return { totalWeeks, passedWeeks, currentWeek, progressPercent }
 }

@@ -52,11 +52,11 @@ describe('calculateTimeline', () => {
     expect(result.passedWeeks).toBe(1)
   })
 
-  it('reports no passed weeks before birth', () => {
+  it('reports no passed weeks and no current week before birth', () => {
     const dob = new Date(2000, 0, 1)
     const result = calculateTimeline(dob, 80, new Date(1999, 11, 31))
     expect(result.passedWeeks).toBe(0)
-    expect(result.currentWeek).toBe(1)
+    expect(result.currentWeek).toBeNull()
   })
 
   it('caps passedWeeks at totalWeeks and sets currentWeek to null when lifespan exceeded', () => {
