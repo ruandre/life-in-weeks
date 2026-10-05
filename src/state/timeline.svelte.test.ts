@@ -223,6 +223,26 @@ describe('selectWeek outcomes', () => {
     expect(state.research.statusMessage).toBe('Research failed: boom')
   })
 
+  it('leaves the newer selection alone when a superseded stream resolves late', async () => {
+    let resolveFirst: (stream: AsyncIterable<string>) => void = () => {}
+    vi.mocked(createResearchStream)
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveFirst = resolve
+      }))
+      .mockImplementationOnce(() => new Promise(() => {}))
+    const state = generatedState()
+
+    const first = state.selectWeek(1)
+    void state.selectWeek(2)
+    resolveFirst((async function* () {
+      yield 'stale'
+    })())
+
+    expect(await first).toBeNull()
+    expect(state.research.weekIndex).toBe(2)
+    expect(state.research.status).toBe('loading')
+  })
+
   it('returns null without an error when superseded', async () => {
     vi.mocked(createResearchStream).mockRejectedValueOnce(new DOMException('Superseded', 'AbortError'))
     const state = generatedState()

@@ -195,6 +195,8 @@ export class TimelineState {
         },
       })
 
+      if (!isCurrent())
+        return null
       this.research.status = 'streaming'
       let completeResult = ''
 
