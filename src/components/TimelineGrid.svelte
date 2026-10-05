@@ -386,17 +386,20 @@
         <div role='row' class='grid-row'>
           <div role='rowheader' class='year-label'>{row.yearLabel}</div>
           {#each row.weeks as week (week.index)}
+            <!-- Per-cell deriveds: selection or focus change re-runs only cells whose value flipped -->
+            {@const isSelected = selectedWeek === week.index}
+            {@const isTabStop = rovingWeek === week.index}
             <div
               role='gridcell'
               class={[
                 'week',
                 week.isPassed && 'passed',
                 week.isCurrent && 'current',
-                selectedWeek === week.index && 'selected',
+                isSelected && 'selected',
               ]}
               data-week={week.index}
-              tabindex={rovingWeek === week.index ? 0 : -1}
-              aria-selected={selectedWeek === week.index}
+              tabindex={isTabStop ? 0 : -1}
+              aria-selected={isSelected}
               aria-current={week.isCurrent ? 'date' : undefined}
               aria-label={week.ariaLabel}
             ></div>
