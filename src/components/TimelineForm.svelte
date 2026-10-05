@@ -271,7 +271,7 @@
 
   input {
     background: transparent;
-    border: 1px solid var(--grey-dark);
+    border: 1px solid var(--control-border);
     color: var(--fg);
     font-family: var(--font);
     font-size: 1rem;

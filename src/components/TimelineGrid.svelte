@@ -476,7 +476,7 @@
     appearance: none;
     font: inherit;
     background: transparent;
-    border: 1px solid var(--week-border);
+    border: 1px solid var(--control-border);
     cursor: pointer;
     forced-color-adjust: none;
     padding: 0;

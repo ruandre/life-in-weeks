@@ -6,8 +6,8 @@
     --grey: oklch(0.6268 0 0);
     --grey-dark: oklch(0.24 0 0);
     --border: oklch(0.22 0 0);
-    /* Week cells are buttons; 3:1 contrast required (WCAG 1.4.11) */
-    --week-border: oklch(0.5 0 0);
+    /* Control boundaries need 3:1 contrast against --bg (WCAG 1.4.11) */
+    --control-border: oklch(0.5 0 0);
     --font: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --space-1: 4px;
     --space-2: 8px;
@@ -48,7 +48,7 @@
       --grey: oklch(0.48 0 0);
       --grey-dark: oklch(0.92 0 0);
       --border: oklch(0.88 0 0);
-      --week-border: oklch(0.63 0 0);
+      --control-border: oklch(0.63 0 0);
       --scrollbar-thumb: oklch(0.82 0 0);
       --scrollbar-track: var(--bg);
       --hover-shadow: oklch(0 0 0 / 0.15) 0 4px 12px;
@@ -63,7 +63,7 @@
       --grey: oklch(0.3 0 0);
       --grey-dark: oklch(0.85 0 0);
       --border: oklch(0.4 0 0);
-      --week-border: oklch(0.45 0 0);
+      --control-border: oklch(0.45 0 0);
       --accent: oklch(0.45 0.2 250);
       --scrollbar-thumb: oklch(0.4 0 0);
       --scrollbar-track: oklch(1 0 0);
@@ -76,7 +76,7 @@
       --grey: oklch(0.75 0 0);
       --grey-dark: oklch(0.3867 0 0);
       --border: oklch(0.55 0 0);
-      --week-border: oklch(0.6 0 0);
+      --control-border: oklch(0.6 0 0);
       --accent: oklch(0.72 0.19 250);
       --scrollbar-thumb: oklch(0.6 0 0);
       --scrollbar-track: oklch(0 0 0);
