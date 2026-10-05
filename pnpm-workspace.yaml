@@ -10,3 +10,10 @@ trustPolicyExclude:
 allowBuilds:
   '@google/genai': true
   protobufjs: true
+
+# Security fixes for transitive dev dependencies; drop once dependents require them
+overrides:
+  # GHSA-q2hr-2g5m-vwhr, GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p; reached via minimatch ^5.0.8
+  brace-expansion@>=4.0.0 <5.0.12: ^5.0.12
+  # GHSA-px8p-9vwx-vf98; satori pins 0.7.3, 0.7.5 only changes ZIP code it does not use
+  fflate@>=0.7.0 <0.7.5: ^0.7.5
