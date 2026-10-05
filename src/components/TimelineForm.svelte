@@ -1,5 +1,6 @@
 <script lang='ts'>
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
+  import { flushSync } from 'svelte'
   import { LIFESPAN_MAX_YEARS, LIFESPAN_MIN_YEARS } from '../config/constants'
   import { COUNTRIES } from '../config/countries'
   import { formatLocalIsoDate, parseLocalDate } from '../lib/date'
@@ -71,6 +72,8 @@
       return true
     }
 
+    // Screen readers announce on focus; aria-invalid must be in the DOM first
+    flushSync()
     if (!isDobValid)
       dobInputEl?.focus()
     else if (!isCountryValid)

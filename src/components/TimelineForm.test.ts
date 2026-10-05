@@ -33,4 +33,18 @@ describe('timeline form', () => {
     expect(screen.getByLabelText(/date of birth/i)).toHaveProperty('ariaInvalid', 'true')
     expect(document.getElementById('dob-error')?.textContent).toContain('not a future one')
   })
+
+  it('marks the field invalid before moving focus to it', async () => {
+    renderForm({ dob: '2999-01-01' })
+    const dobInput = screen.getByLabelText(/date of birth/i)
+    let invalidOnFocus: string | null = null
+    dobInput.addEventListener('focus', () => {
+      invalidOnFocus = dobInput.getAttribute('aria-invalid')
+    })
+
+    await submit()
+
+    expect(document.activeElement).toBe(dobInput)
+    expect(invalidOnFocus).toBe('true')
+  })
 })
