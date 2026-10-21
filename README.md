@@ -24,14 +24,14 @@ The key is held in memory for that tab only and is never written to storage. Clo
 
 ## Development
 
+[mise](https://mise.jdx.dev) pins the toolchain and defines every task; [aube](https://aube.sh) manages npm dependencies.
+
 ```sh
-pnpm install
-pnpm dev       # Vite dev server
-pnpm build     # static build into dist/ (regenerates the OG image first)
-pnpm check     # svelte-check
-pnpm test      # vitest run
-pnpm lint      # eslint check
-pnpm lint:fix  # eslint auto-fix
+mise run setup     # install tools, dependencies and git hooks
+mise run dev       # Vite dev server
+mise run check     # lint, typecheck, test
+mise run build     # static build into dist/ (regenerates the OG image first)
+mise tasks         # list every task
 ```
 
 ## Agent tools

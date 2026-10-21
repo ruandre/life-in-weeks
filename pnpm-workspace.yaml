@@ -3,6 +3,9 @@ minimumReleaseAge: 4320
 
 shellEmulator: true
 
+# Per-project store like CI: Vite refuses to serve test setup files from the per-user store outside the project root
+enableGlobalVirtualStore: false
+
 trustPolicy: no-downgrade
 trustPolicyExclude:
   - chokidar@4.0.3

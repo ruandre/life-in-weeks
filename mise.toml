@@ -1,0 +1,112 @@
+# Single source of truth for toolchain, environment and tasks.
+# Machine-specific overrides go in mise.local.toml (gitignored).
+min_version = "2026.9.17"
+
+# Tools that ship an agent skill (aube, hk) link it into .agents/skills (gitignored).
+[settings]
+skills.dir = ".agents/skills"
+skills.auto_sync = true
+skills.prune = true
+
+[tools]
+node = "24.21.0"
+aube = "2.7.2"
+hk = "2.7.1"
+pkl = "0.32.1"
+typos = "1.51.1"
+actionlint = "1.7.12"
+betterleaks = "1.9.0"
+
+[env]
+_.path = [ "{{config_root}}/node_modules/.bin" ]
+
+HK_MISE = "1"
+
+# Tasks are the project's command interface: `mise tasks` lists them.
+
+# --- Develop ---
+
+[tasks.setup]
+description = "First-time setup: toolchain, dependencies, git hooks"
+run = [
+  "mise install",
+  "aube install",
+  "hk install --mise"
+]
+
+[tasks.dev]
+description = "Run the Vite dev server (http://localhost:5173)"
+run = "aube exec vite"
+
+[tasks.preview]
+description = "Serve the production build from dist/"
+run = "aube exec vite preview"
+
+[tasks.og]
+description = "Regenerate the social preview image from scripts/generate-og.mjs"
+sources = [ "scripts/generate-og.mjs" ]
+outputs = [
+  "public/og-image.png",
+  "public/og-image.svg"
+]
+run = "node scripts/generate-og.mjs"
+
+[tasks.fix]
+description = "Auto-fix lint and formatting issues"
+run = "aube exec eslint --fix ."
+
+# --- Verify ---
+
+[tasks.lint]
+description = "Run every linter and formatter check"
+run = "aube exec eslint ."
+
+[tasks.typecheck]
+description = "Type-check components and modules with svelte-check"
+run = "aube exec svelte-check --tsconfig ./tsconfig.json"
+
+[tasks.test]
+description = "Run unit and property-based tests"
+run = "aube exec vitest run"
+
+[tasks.audit]
+description = "Check dependencies for known vulnerabilities"
+# GHSA-238p-pmpm-9mq7 (low): katex reached only through eslint's markdown plugin; the fix is outside its pinned range.
+run = "aube audit --ignore GHSA-238p-pmpm-9mq7"
+
+[tasks.outdated]
+description = "Report available updates for tools and npm packages (changes nothing)"
+quiet = true
+run = """
+#!/usr/bin/env bash
+set -euo pipefail
+echo "== Tools (mise.toml) =="
+mise outdated --bump --local
+echo
+echo "== npm packages (Wanted honors minimumReleaseAge) =="
+# Exit status 1 only means updates exist.
+aube outdated || [[ $? -eq 1 ]]
+echo
+echo "Not checked: GitHub Actions SHAs in .github/workflows."
+"""
+
+[tasks.check]
+description = "Quality gate before a commit: lint, typecheck, test"
+depends = [
+  "lint",
+  "typecheck",
+  "test"
+]
+
+[tasks.build]
+description = "Static production build into dist/ (regenerates the OG image first)"
+depends = [ "og" ]
+run = "aube exec vite build"
+
+[tasks.ci]
+description = "Everything CI runs: check, audit, build"
+depends = [
+  "check",
+  "audit",
+  "build"
+]
