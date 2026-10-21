@@ -1,13 +1,11 @@
 <script lang='ts'>
+  import { prefersReducedMotion } from 'svelte/motion'
   import { HEADING_REPLAY_MS } from '../config/constants'
 
   let replaying = false
 
   function handlePointerEnter(e: PointerEvent): void {
-    if (replaying)
-      return
-
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    if (replaying || prefersReducedMotion.current)
       return
 
     replaying = true
