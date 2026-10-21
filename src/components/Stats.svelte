@@ -52,14 +52,14 @@
 >
   <div class='stat-group'>
     <dt class='stat-label'>WEEKS LIVED</dt>
-    <dd class='stat-value accent' id='lived'>
+    <dd class='stat-value accent'>
       <span aria-hidden='true'>{displayedLivedText}</span>
       <span class='visually-hidden'>{targetLived.toLocaleString()}</span>
     </dd>
   </div>
   <div class='stat-group'>
     <dt class='stat-label'>PROGRESS</dt>
-    <dd class='stat-value' id='progress'>
+    <dd class='stat-value'>
       <span aria-hidden='true'>{displayedProgressText}</span>
       <span class='visually-hidden'>{targetProgress.toFixed(1)}%</span>
     </dd>
@@ -73,11 +73,6 @@
 <style>
   .stats {
     margin-top: auto;
-  }
-
-  .stats:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
   }
 
   .stat-group {

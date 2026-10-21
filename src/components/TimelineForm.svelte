@@ -132,7 +132,6 @@
 </script>
 
 <form
-  id='timeline-form'
   novalidate
   toolname='generate_life_timeline'
   tooldescription='Generate or update the life timeline grid from date of birth, country, and expected lifespan'
@@ -201,9 +200,6 @@
     >
       {countryErrorMessage}
     </div>
-    <noscript>
-      <p class='research-subhead'>The country list needs JavaScript. Type the name instead.</p>
-    </noscript>
   </div>
 
   <div class='form-group'>
@@ -239,7 +235,6 @@
   <button
     class='btn'
     type='submit'
-    id='refresh-btn'
     disabled={isGenerating}
     aria-busy={isGenerating}
   >

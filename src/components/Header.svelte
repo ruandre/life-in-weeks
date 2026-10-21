@@ -59,11 +59,6 @@
     }
   }
 
-  h1:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
-  }
-
   .word {
     overflow: hidden;
     display: inline-block;

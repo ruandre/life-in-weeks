@@ -136,7 +136,7 @@
     {/if}
   </div>
 
-  <div class='visually-hidden' id='research-status' aria-live='polite'>
+  <div class='visually-hidden' aria-live='polite'>
     {research.statusMessage}
   </div>
 
