@@ -13,42 +13,26 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # Install exactly what mise.lock records (checksums included).
+  MISE_LOCKED: 1
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-        with:
-          version: 11.25.0
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          cache: pnpm
+      - name: Install toolchain (mise.toml)
+        uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: aube install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Type check
-        run: pnpm run check
-
-      - name: Test
-        run: pnpm run test
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Copy static assets
-        run: |
-          cp -r public/* dist/ 2>/dev/null || true
+      - name: Lint, typecheck, test, audit, build
+        run: mise run ci
 
       - name: Add .nojekyll
         run: touch dist/.nojekyll
