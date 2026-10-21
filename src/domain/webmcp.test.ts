@@ -129,7 +129,7 @@ describe('get_timeline_stats', () => {
 
   it.each([
     ['empty dob', '', 80],
-    ['unparseable dob', 'not-a-date', 80],
+    ['unparsable dob', 'not-a-date', 80],
     ['lifespan below min', '2000-01-01', LIFESPAN_MIN_YEARS - 1],
     ['lifespan above max', '2000-01-01', LIFESPAN_MAX_YEARS + 1],
     ['fractional lifespan', '2000-01-01', 80.5],

@@ -53,13 +53,13 @@ run = "node scripts/generate-og.mjs"
 
 [tasks.fix]
 description = "Auto-fix lint and formatting issues"
-run = "aube exec eslint --fix ."
+run = "hk fix --all"
 
 # --- Verify ---
 
 [tasks.lint]
-description = "Run every linter and formatter check"
-run = "aube exec eslint ."
+description = "Run every linter and formatter check (the pre-commit hook runs the same steps)"
+run = "hk check --all"
 
 [tasks.typecheck]
 description = "Type-check components and modules with svelte-check"

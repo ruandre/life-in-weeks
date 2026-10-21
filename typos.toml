@@ -1,0 +1,6 @@
+[files]
+extend-exclude = [
+  "aube-lock.yaml",
+  "mise.lock",
+  "public/og-image.svg"
+]

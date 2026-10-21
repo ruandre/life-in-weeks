@@ -1,0 +1,52 @@
+amends "package://github.com/jdx/hk/releases/download/v2.7.1/hk@2.7.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.7.1/hk@2.7.1#/Builtins.pkl"
+
+// Tools resolve through mise (HK_MISE=1), so hooks use the versions pinned in mise.toml.
+
+exclude = List(
+  "aube-lock.yaml",
+  "mise.lock",
+  "public/og-image.svg"
+)
+
+local linters = new Mapping<String, Step> {
+  ["merge-conflict"] = Builtins.check_merge_conflict
+  ["trailing-whitespace"] = Builtins.trailing_whitespace
+  ["typos"] = Builtins.typos
+  ["secrets"] = Builtins.betterleaks
+  ["actionlint"] = Builtins.actionlint
+  // antfu's config lints and formats Svelte, TS/JS plus HTML, JSON, YAML, TOML, Markdown and CSS.
+  ["eslint"] = (Builtins.eslint) {
+    glob = List("**/*.{js,mjs,cjs,ts,mts,cts,svelte,html,json,jsonc,yaml,yml,toml,md,css}")
+    check = "eslint --no-warn-ignored {{files}}"
+    fix = "eslint --no-warn-ignored --fix {{files}}"
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = linters
+  }
+  ["commit-msg"] {
+    steps {
+      ["conventional-commit"] = Builtins.check_conventional_commit
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["check"] {
+        check = "mise run check"
+        exclusive = true
+      }
+    }
+  }
+  ["check"] {
+    steps = linters
+  }
+  ["fix"] {
+    fix = true
+    steps = linters
+  }
+}
