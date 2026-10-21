@@ -2,7 +2,6 @@
   "name": "life-in-weeks",
   "type": "module",
   "version": "1.0.0",
-  "packageManager": "pnpm@11.25.0",
   "description": "A human lifespan drawn as a grid of weeks, with on-device AI research for any single week and WebMCP agent tools.",
   "author": "Ruandre Janse van Rensburg <ruandrejvr@gmail.com> (https://github.com/ruandre)",
   "license": "MIT",
