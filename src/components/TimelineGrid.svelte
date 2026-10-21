@@ -2,6 +2,8 @@
   import type { Timeline } from '../domain/timeline'
   import { prefersReducedMotion } from 'svelte/motion'
   import { WEEKS_PER_YEAR } from '../config/constants'
+  import { findTargetWeek } from '../domain/grid-navigation'
+  import { buildGridRows } from '../domain/grid-rows'
   import { getWeekAge, getWeekStartDate } from '../domain/timeline'
   import { parseLocalDate } from '../lib/date'
   import Tooltip from './Tooltip.svelte'
@@ -99,119 +101,20 @@
     return Math.max(VIEWPORT_PADDING, Math.min(value, viewportSize - size - VIEWPORT_PADDING))
   }
 
+  const dobDate = $derived(parseLocalDate(dob))
+  const gridRows = $derived(buildGridRows(timeline, dobDate))
+
   function formatTooltipText(weekIndex: number): string {
     const { age, weekInYear } = getWeekAge(weekIndex)
-    let yearText = ''
-    if (dob) {
-      const d = parseLocalDate(dob)
-      if (d) {
-        const year = getWeekStartDate(d, weekIndex).getFullYear()
-        yearText = ` (${year})`
-      }
-    }
+    const yearText = dobDate ? ` (${getWeekStartDate(dobDate, weekIndex).getFullYear()})` : ''
     return `Age ${age}, week ${weekInYear}${yearText}`
   }
-
-  // Row header announces its year; cell names only a later calendar year
-  function describeWeek(weekIndex: number, isPassed: boolean, yearPastRowHeader: number | null): string {
-    const { age, weekInYear } = getWeekAge(weekIndex)
-    const yearText = yearPastRowHeader === null ? '' : `, ${yearPastRowHeader}`
-    const statusText = isPassed ? ' (passed)' : ''
-    return `Age ${age}, week ${weekInYear}${yearText}${statusText}`
-  }
-
-  interface GridRow {
-    yearIndex: number
-    yearLabel: string
-    weeks: Array<{
-      index: number
-      isPassed: boolean
-      isCurrent: boolean
-      ariaLabel: string
-    }>
-  }
-
-  const gridRows = $derived.by<GridRow[]>(() => {
-    if (!timeline || timeline.totalWeeks <= 0)
-      return []
-
-    const validDob = dob ? parseLocalDate(dob) : null
-    const passedWeeks = timeline.passedWeeks
-    const currentWeek = timeline.currentWeek
-    const totalWeeks = timeline.totalWeeks
-    const numYears = Math.ceil(totalWeeks / WEEKS_PER_YEAR)
-
-    const rows: GridRow[] = []
-
-    for (let y = 0; y < numYears; y++) {
-      const firstWeekOfYear = y * WEEKS_PER_YEAR + 1
-      const calendarYear = validDob
-        ? validDob.getFullYear() + y
-        : null
-      const yearLabel = String(calendarYear ?? `Age ${y}`)
-
-      const weeks = []
-      for (let w = 0; w < WEEKS_PER_YEAR; w++) {
-        const weekIndex = firstWeekOfYear + w
-        if (weekIndex > totalWeeks)
-          break
-
-        const isPassed = weekIndex <= passedWeeks
-        const isCurrent = currentWeek !== null && weekIndex === currentWeek
-        const weekYear = validDob ? getWeekStartDate(validDob, weekIndex).getFullYear() : null
-        const yearPastRowHeader = weekYear === calendarYear ? null : weekYear
-
-        weeks.push({
-          index: weekIndex,
-          isPassed,
-          isCurrent,
-          ariaLabel: describeWeek(weekIndex, isPassed, yearPastRowHeader),
-        })
-      }
-
-      rows.push({
-        yearIndex: y,
-        yearLabel,
-        weeks,
-      })
-    }
-
-    return rows
-  })
 
   function warmOnce(): void {
     if (warmed)
       return
     warmed = true
     onWarmUp()
-  }
-
-  const PAGE_ROWS = 5
-
-  function findTargetWeek({ key, ctrlKey }: Pick<KeyboardEvent, 'key' | 'ctrlKey'>, week: number): number | null {
-    const totalWeeks = timeline?.totalWeeks ?? 0
-    const row = Math.floor((week - 1) / WEEKS_PER_YEAR)
-    const column = (week - 1) % WEEKS_PER_YEAR
-    const lastRow = Math.ceil(totalWeeks / WEEKS_PER_YEAR) - 1
-    const weekInRow = (targetRow: number) =>
-      Math.min(Math.max(targetRow, 0), lastRow) * WEEKS_PER_YEAR + column + 1
-
-    const moves: Record<string, () => number> = {
-      'ArrowRight': () => week + 1,
-      'ArrowLeft': () => week - 1,
-      'ArrowDown': () => week + WEEKS_PER_YEAR,
-      'ArrowUp': () => week - WEEKS_PER_YEAR,
-      'PageDown': () => weekInRow(row + PAGE_ROWS),
-      'PageUp': () => weekInRow(row - PAGE_ROWS),
-      'Home': () => week - column,
-      'End': () => week + WEEKS_PER_YEAR - 1 - column,
-      'Ctrl+Home': () => 1,
-      'Ctrl+End': () => totalWeeks,
-    }
-    const shortcut = ctrlKey ? `Ctrl+${key}` : key
-    // Ctrl+Arrow etc. fall back to the unmodified move
-    // eslint-disable-next-line security/detect-object-injection -- lookup on local literal map, unknown keys yield null
-    return (moves[shortcut] ?? moves[key])?.() ?? null
   }
 
   const ACTIVATION_KEYS = new Set(['Enter', ' '])
@@ -233,7 +136,7 @@
       return
     }
 
-    const targetWeek = findTargetWeek(e, currentWeek)
+    const targetWeek = findTargetWeek(e, currentWeek, timeline?.totalWeeks ?? 0)
     if (targetWeek === null)
       return
     const targetEl = gridEl.querySelector<HTMLElement>(`.week[data-week="${targetWeek}"]`)
