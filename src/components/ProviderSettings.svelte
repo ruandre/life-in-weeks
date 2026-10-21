@@ -12,6 +12,9 @@
     }
   })
 
+  // Placeholder option value is ''; an unmatched value blanks the select
+  const selectedModel = $derived(settingsState.canPickModel ? settingsState.model : '')
+
   function handleToggle(event: Event & { currentTarget: HTMLDetailsElement }): void {
     settingsState.setPanelOpen(event.currentTarget.open)
   }
@@ -71,7 +74,7 @@
         <select
           id='gemini-model'
           name='gemini-model'
-          value={settingsState.model}
+          value={selectedModel}
           disabled={!settingsState.canPickModel}
           onchange={handleModelChange}
         >
