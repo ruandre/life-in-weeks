@@ -185,8 +185,8 @@ export class TimelineState {
     const { provider } = settingsState
     if (provider === 'local' && !isLocalModelSupported())
       return this.showFailure('unsupported', 'This browser has no built-in AI model.')
-    if (provider === 'gemini' && !settingsState.hasCredentials)
-      return this.showFailure('error', 'Add a Gemini API key and pick a model to research this week.')
+    if (provider !== 'local' && !settingsState.hasCredentials)
+      return this.showFailure('error', `Add a ${settingsState.cloudProvider.name} API key and pick a model to research this week.`)
 
     try {
       const stream = await createResearchStream({
@@ -194,7 +194,7 @@ export class TimelineState {
         dobDate,
         country: this.displayedCountry,
         provider,
-        gemini: { apiKey: settingsState.apiKey, model: settingsState.model },
+        credentials: { apiKey: settingsState.apiKey, model: settingsState.model },
         signal: controller.signal,
         onDownloadProgress: (loaded) => {
           if (!isCurrent())

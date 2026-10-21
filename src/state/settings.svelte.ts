@@ -1,21 +1,21 @@
-import type { GeminiKeyStatus, GeminiModel, ResearchProvider } from '../types'
-import { isAbortError } from '../lib/errors'
-import {
-  DEFAULT_GEMINI_MODEL,
-  fetchGeminiModels,
-  formatGeminiError,
-} from '../services/gemini'
+import type { CloudProvider } from '../services/cloud-provider'
+import type { CloudProviderId, KeyStatus, ModelOption, ResearchProvider } from '../types'
+import { getErrorMessage, isAbortError } from '../lib/errors'
+import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
 import { warmUpLocalModel } from '../services/research-service'
 
 const VERIFY_DEBOUNCE_MS = 500
+const DEFAULT_CLOUD_PROVIDER: CloudProviderId = 'gemini'
 
 export class SettingsState {
+  cloudProviderId = $state<CloudProviderId>(DEFAULT_CLOUD_PROVIDER)
+
   // In-memory only; do not persist credentials
   apiKey = $state('')
-  model = $state(DEFAULT_GEMINI_MODEL)
+  model = $state(CLOUD_PROVIDERS[DEFAULT_CLOUD_PROVIDER].defaultModel)
 
-  models = $state.raw<GeminiModel[]>([])
-  keyStatus = $state<GeminiKeyStatus>('empty')
+  models = $state.raw<ModelOption[]>([])
+  keyStatus = $state<KeyStatus>('empty')
   keyError = $state<string | null>(null)
 
   isPanelOpen = $state(false)
@@ -23,9 +23,13 @@ export class SettingsState {
   private verifyTimer: ReturnType<typeof setTimeout> | null = null
   private verifyController: AbortController | null = null
 
-  // Open panel routes to Gemini; prevents silent local fallback during configuration
+  get cloudProvider(): CloudProvider {
+    return CLOUD_PROVIDERS[this.cloudProviderId]
+  }
+
+  // Open panel routes to the cloud provider; prevents silent local fallback during configuration
   get provider(): ResearchProvider {
-    return this.apiKey.trim() || this.isPanelOpen ? 'gemini' : 'local'
+    return this.apiKey.trim() || this.isPanelOpen ? this.cloudProviderId : 'local'
   }
 
   get hasCredentials(): boolean {
@@ -48,6 +52,14 @@ export class SettingsState {
     }
   }
 
+  // A key belongs to one provider, so switching wipes it
+  setCloudProvider(id: CloudProviderId): void {
+    if (id === this.cloudProviderId)
+      return
+    this.cloudProviderId = id
+    this.clearCredentials()
+  }
+
   setApiKey(value: string): void {
     this.apiKey = value.trim()
     this.scheduleVerification()
@@ -61,7 +73,7 @@ export class SettingsState {
     this.cancelPendingVerification()
     this.keyError = null
     this.apiKey = ''
-    this.model = DEFAULT_GEMINI_MODEL
+    this.model = this.cloudProvider.defaultModel
     this.models = []
     this.keyStatus = 'empty'
   }
@@ -99,7 +111,7 @@ export class SettingsState {
     this.keyError = null
 
     try {
-      const models = await fetchGeminiModels({
+      const models = await this.cloudProvider.fetchModels({
         apiKey: this.apiKey,
         signal: controller.signal,
       })
@@ -118,18 +130,19 @@ export class SettingsState {
     if (isAbortError(err) || controller.signal.aborted)
       return
     this.keyStatus = 'invalid'
-    this.keyError = formatGeminiError(err) || 'Could not reach Gemini API.'
+    this.keyError = getErrorMessage(err) || `Could not reach ${this.cloudProvider.name} API.`
     this.models = []
   }
 
-  private selectDefaultModel(models: GeminiModel[]): void {
+  private selectDefaultModel(models: ModelOption[]): void {
+    const { defaultModel } = this.cloudProvider
     if (models.some(model => model.id === this.model))
       return
-    if (models.some(model => model.id === DEFAULT_GEMINI_MODEL)) {
-      this.setModel(DEFAULT_GEMINI_MODEL)
+    if (models.some(model => model.id === defaultModel)) {
+      this.setModel(defaultModel)
       return
     }
-    this.setModel(models[0]?.id ?? DEFAULT_GEMINI_MODEL)
+    this.setModel(models[0]?.id ?? defaultModel)
   }
 }
 

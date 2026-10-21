@@ -1,12 +1,19 @@
-import type { GeminiModel } from '../types'
+import type { ModelOption } from '../types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_GEMINI_MODEL, fetchGeminiModels } from '../services/gemini'
+import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
 import { warmUpLocalModel } from '../services/research-service'
 import { SettingsState } from './settings.svelte'
 
-vi.mock('../services/gemini', async importOriginal => ({
-  ...await importOriginal<typeof import('../services/gemini')>(),
-  fetchGeminiModels: vi.fn(),
+vi.mock('../services/cloud-provider-registry', () => ({
+  CLOUD_PROVIDERS: {
+    gemini: {
+      id: 'gemini',
+      name: 'Gemini',
+      defaultModel: 'gemini-default',
+      fetchModels: vi.fn(),
+      streamCompletion: vi.fn(),
+    },
+  },
 }))
 
 vi.mock('../services/research-service', () => ({
@@ -14,18 +21,19 @@ vi.mock('../services/research-service', () => ({
 }))
 
 const DEBOUNCE_MS = 500
+const DEFAULT_GEMINI_MODEL = CLOUD_PROVIDERS.gemini.defaultModel
 
-const defaultModel: GeminiModel = { id: DEFAULT_GEMINI_MODEL, name: 'Default' }
-const otherModel: GeminiModel = { id: 'gemini-other', name: 'Other' }
-const thirdModel: GeminiModel = { id: 'gemini-third', name: 'Third' }
+const defaultModel: ModelOption = { id: DEFAULT_GEMINI_MODEL, name: 'Default' }
+const otherModel: ModelOption = { id: 'gemini-other', name: 'Other' }
+const thirdModel: ModelOption = { id: 'gemini-third', name: 'Third' }
 
-const fetchModels = vi.mocked(fetchGeminiModels)
+const fetchModels = vi.mocked(CLOUD_PROVIDERS.gemini.fetchModels)
 
 function abortError(): DOMException {
   return new DOMException('aborted', 'AbortError')
 }
 
-async function verifiedState(models: GeminiModel[] = [defaultModel, otherModel]): Promise<SettingsState> {
+async function verifiedState(models: ModelOption[] = [defaultModel, otherModel]): Promise<SettingsState> {
   fetchModels.mockResolvedValueOnce(models)
   const state = new SettingsState()
   state.setPanelOpen(true)
@@ -114,7 +122,7 @@ describe('key verification', () => {
 
   it('marks the key invalid with a readable error and drops models', async () => {
     const state = await verifiedState()
-    fetchModels.mockRejectedValue(new Error(JSON.stringify({ error: { message: 'API key not valid' } })))
+    fetchModels.mockRejectedValue(new Error('API key not valid'))
 
     state.setApiKey('bad-key')
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
@@ -137,7 +145,7 @@ describe('key verification', () => {
   })
 
   it('aborts superseded verification and ignores its late response', async () => {
-    const first = Promise.withResolvers<GeminiModel[]>()
+    const first = Promise.withResolvers<ModelOption[]>()
     fetchModels
       .mockReturnValueOnce(first.promise)
       .mockResolvedValueOnce([thirdModel])
@@ -157,7 +165,7 @@ describe('key verification', () => {
   })
 
   it('ignores a late failure from superseded verification', async () => {
-    const first = Promise.withResolvers<GeminiModel[]>()
+    const first = Promise.withResolvers<ModelOption[]>()
     fetchModels
       .mockReturnValueOnce(first.promise)
       .mockResolvedValueOnce([otherModel])
@@ -176,7 +184,7 @@ describe('key verification', () => {
   })
 
   it('ignores a late success from the old key while the new key is debouncing', async () => {
-    const first = Promise.withResolvers<GeminiModel[]>()
+    const first = Promise.withResolvers<ModelOption[]>()
     fetchModels
       .mockReturnValueOnce(first.promise)
       .mockResolvedValueOnce([thirdModel])
@@ -194,7 +202,7 @@ describe('key verification', () => {
   })
 
   it('verifies the new key after a late success from the old key', async () => {
-    const first = Promise.withResolvers<GeminiModel[]>()
+    const first = Promise.withResolvers<ModelOption[]>()
     fetchModels
       .mockReturnValueOnce(first.promise)
       .mockResolvedValueOnce([thirdModel])
@@ -297,7 +305,7 @@ describe('setPanelOpen', () => {
   })
 
   it('ignores a late success from verification aborted on close', async () => {
-    const pending = Promise.withResolvers<GeminiModel[]>()
+    const pending = Promise.withResolvers<ModelOption[]>()
     fetchModels.mockReturnValueOnce(pending.promise)
     const state = new SettingsState()
     state.setPanelOpen(true)

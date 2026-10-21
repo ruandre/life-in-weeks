@@ -15,6 +15,8 @@
   // Placeholder option value is ''; an unmatched value blanks the select
   const selectedModel = $derived(settingsState.canPickModel ? settingsState.model : '')
 
+  const cloud = $derived(settingsState.cloudProvider)
+
   function handleToggle(event: Event & { currentTarget: HTMLDetailsElement }): void {
     settingsState.setPanelOpen(event.currentTarget.open)
   }
@@ -35,22 +37,22 @@
       <span>Model</span>
     </span>
     <span class='provider-badge'>
-      {settingsState.provider === 'gemini' ? 'Gemini API' : 'On device'}
+      {settingsState.provider === 'local' ? 'On device' : `${cloud.name} API`}
     </span>
   </summary>
 
   <div class='provider-body'>
     <div class='field'>
-      <label for='gemini-key'>Gemini API key</label>
+      <label for='cloud-key'>{cloud.name} API key</label>
       <input
         type='password'
-        id='gemini-key'
-        name='gemini-key'
+        id='cloud-key'
+        name='cloud-key'
         value={settingsState.apiKey}
-        placeholder='AIzaSy…'
+        placeholder={cloud.keyPlaceholder}
         autocomplete='off'
         spellcheck='false'
-        aria-describedby='gemini-key-hint'
+        aria-describedby='cloud-key-hint'
         aria-invalid={settingsState.keyStatus === 'invalid' ? 'true' : undefined}
         oninput={handleKeyInput}
       />
@@ -63,17 +65,17 @@
           {statusText}
         </p>
       {/if}
-      <p class='hint' id='gemini-key-hint'>
-        Get a free API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a>. Paste it to run research through Google Gemini instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.
+      <p class='hint' id='cloud-key-hint'>
+        Get an API key at <a href={cloud.keyConsoleUrl} target='_blank' rel='noopener noreferrer' class='inline-link'>{cloud.keyConsoleName} <ExternalLink size={11} aria-hidden='true' /></a>. {cloud.billingNote} Paste it to run research through {cloud.name} instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.
       </p>
     </div>
 
     <div class='field'>
-      <label for='gemini-model'>Gemini model</label>
+      <label for='cloud-model'>{cloud.name} model</label>
       <div class='select-shell'>
         <select
-          id='gemini-model'
-          name='gemini-model'
+          id='cloud-model'
+          name='cloud-model'
           value={selectedModel}
           disabled={!settingsState.canPickModel}
           onchange={handleModelChange}

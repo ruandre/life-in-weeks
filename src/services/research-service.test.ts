@@ -1,13 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SYSTEM_PROMPT } from '../domain/research-prompt'
-import { streamGeminiCompletion } from './gemini'
+import { CLOUD_PROVIDERS } from './cloud-provider-registry'
 import { streamLocalCompletion } from './local-model'
 import { createResearchStream } from './research-service'
 
-vi.mock('./gemini', () => ({
-  streamGeminiCompletion: vi.fn(async () => (async function* () {
-    yield 'gemini'
-  })()),
+vi.mock('./cloud-provider-registry', () => ({
+  CLOUD_PROVIDERS: {
+    gemini: {
+      name: 'Gemini',
+      streamCompletion: vi.fn(async () => (async function* () {
+        yield 'gemini'
+      })()),
+    },
+  },
 }))
 
 vi.mock('./local-model', () => ({
@@ -16,8 +21,9 @@ vi.mock('./local-model', () => ({
   })()),
 }))
 
+const streamGeminiCompletion = vi.mocked(CLOUD_PROVIDERS.gemini.streamCompletion)
 const dobDate = new Date(2000, 0, 1)
-const gemini = { apiKey: 'key', model: 'gemini-test' }
+const credentials = { apiKey: 'key', model: 'gemini-test' }
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -37,7 +43,7 @@ describe('createResearchStream', () => {
   })
 
   it('streams from Gemini with the system prompt and credentials', async () => {
-    await createResearchStream({ weekIndex: 1, dobDate, provider: 'gemini', gemini })
+    await createResearchStream({ weekIndex: 1, dobDate, provider: 'gemini', credentials })
 
     expect(streamLocalCompletion).not.toHaveBeenCalled()
     expect(streamGeminiCompletion).toHaveBeenCalledWith(expect.objectContaining({
@@ -52,7 +58,7 @@ describe('createResearchStream', () => {
     ['an empty key', { apiKey: '', model: 'gemini-test' }],
     ['an empty model', { apiKey: 'key', model: '' }],
   ])('rejects Gemini with %s', async (_, credentials) => {
-    await expect(createResearchStream({ weekIndex: 1, dobDate, provider: 'gemini', gemini: credentials }))
+    await expect(createResearchStream({ weekIndex: 1, dobDate, provider: 'gemini', credentials }))
       .rejects
       .toThrow('Add a Gemini API key')
     expect(streamGeminiCompletion).not.toHaveBeenCalled()
@@ -76,7 +82,7 @@ describe('createResearchStream', () => {
       return (async function* () {})()
     })
 
-    await expect(createResearchStream({ weekIndex: 1, dobDate, provider, gemini, signal: controller.signal }))
+    await expect(createResearchStream({ weekIndex: 1, dobDate, provider, credentials, signal: controller.signal }))
       .rejects
       .toMatchObject({ name: 'AbortError' })
   })

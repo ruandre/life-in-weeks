@@ -46,12 +46,12 @@
     </a>
     <h2 id='research-heading'>Time Capsule</h2>
     <p class='research-subhead'>
-      {#if settingsState.provider === 'gemini' && settingsState.hasCredentials}
-        Runs through Gemini API. The week you pick and your country are sent to
-        the model you chose.
-      {:else if settingsState.provider === 'gemini'}
-        Nothing runs until you paste a Gemini API key below. Close this panel
-        to go back to the on-device model.
+      {#if settingsState.provider !== 'local' && settingsState.hasCredentials}
+        Runs through {settingsState.cloudProvider.name} API. The week you pick
+        and your country are sent to the model you chose.
+      {:else if settingsState.provider !== 'local'}
+        Nothing runs until you paste a {settingsState.cloudProvider.name} API
+        key below. Close this panel to go back to the on-device model.
       {:else}
         Runs on your device. Nothing leaves the browser, and it gets things
         wrong (tiny model).

@@ -46,11 +46,13 @@ export interface ModelContext {
 
 export type ResearchChunkStream = AsyncIterable<string>
 
-export type ResearchProvider = 'local' | 'gemini'
+export type CloudProviderId = 'gemini'
 
-export interface GeminiModel {
+export type ResearchProvider = 'local' | CloudProviderId
+
+export interface ModelOption {
   id: string
   name: string
 }
 
-export type GeminiKeyStatus = 'empty' | 'checking' | 'valid' | 'invalid'
+export type KeyStatus = 'empty' | 'checking' | 'valid' | 'invalid'

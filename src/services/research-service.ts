@@ -1,7 +1,8 @@
-import type { ResearchChunkStream, ResearchProvider } from '../types'
+import type { CloudProviderId, ResearchChunkStream, ResearchProvider } from '../types'
+import type { CloudCredentials } from './cloud-provider'
 import { buildResearchPrompt, SYSTEM_PROMPT } from '../domain/research-prompt'
 import { getWeekAge, getWeekEndDate, getWeekStartDate } from '../domain/timeline'
-import { streamGeminiCompletion } from './gemini'
+import { CLOUD_PROVIDERS } from './cloud-provider-registry'
 import { streamLocalCompletion } from './local-model'
 
 export {
@@ -16,19 +17,33 @@ function throwIfAborted(signal?: AbortSignal): void {
     throw new DOMException('Superseded by a newer selection', 'AbortError')
 }
 
-export interface GeminiCredentials {
-  apiKey: string
-  model: string
-}
-
 export interface ResearchStreamOptions {
   weekIndex: number
   dobDate: Date
   country?: string | null
   provider: ResearchProvider
-  gemini?: GeminiCredentials | null
+  credentials?: CloudCredentials | null
   signal?: AbortSignal
   onDownloadProgress?: (loaded: number) => void
+}
+
+async function streamFromCloud(
+  providerId: CloudProviderId,
+  credentials: CloudCredentials | null | undefined,
+  userPrompt: string,
+  signal?: AbortSignal,
+): Promise<ResearchChunkStream> {
+  const provider = CLOUD_PROVIDERS[providerId]
+  if (!credentials?.apiKey || !credentials.model)
+    throw new Error(`Add a ${provider.name} API key and pick a model first.`)
+
+  return provider.streamCompletion({
+    apiKey: credentials.apiKey,
+    model: credentials.model,
+    systemPrompt: SYSTEM_PROMPT,
+    userPrompt,
+    signal,
+  })
 }
 
 // Caller owns rendering and cancellation
@@ -37,7 +52,7 @@ export async function createResearchStream({
   dobDate,
   country,
   provider,
-  gemini,
+  credentials,
   signal,
   onDownloadProgress,
 }: ResearchStreamOptions): Promise<ResearchChunkStream> {
@@ -53,22 +68,9 @@ export async function createResearchStream({
     country: country?.trim() || null,
   })
 
-  if (provider === 'gemini') {
-    if (!gemini?.apiKey || !gemini.model)
-      throw new Error('Add a Gemini API key and pick a model first.')
-
-    const stream = await streamGeminiCompletion({
-      apiKey: gemini.apiKey,
-      model: gemini.model,
-      systemPrompt: SYSTEM_PROMPT,
-      userPrompt,
-      signal,
-    })
-    throwIfAborted(signal)
-    return stream
-  }
-
-  const stream = await streamLocalCompletion({ userPrompt, signal, onDownloadProgress })
+  const stream = provider === 'local'
+    ? await streamLocalCompletion({ userPrompt, signal, onDownloadProgress })
+    : await streamFromCloud(provider, credentials, userPrompt, signal)
   throwIfAborted(signal)
   return stream
 }

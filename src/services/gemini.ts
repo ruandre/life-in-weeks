@@ -1,8 +1,10 @@
 import type { GenerateContentResponse } from '@google/genai'
-import type { GeminiModel, ResearchChunkStream } from '../types'
+import type { ModelOption, ResearchChunkStream } from '../types'
+import type { CloudProvider, CompletionStreamOptions, ModelListOptions } from './cloud-provider'
+import { mergeRecommendedModels } from '../domain/model-options'
 import { isAbortError } from '../lib/errors'
 
-export const RECOMMENDED_MODELS: GeminiModel[] = [
+export const RECOMMENDED_MODELS: ModelOption[] = [
   { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
   { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash Lite' },
   { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview' },
@@ -44,11 +46,6 @@ function isCancelled(err: unknown, signal?: AbortSignal): boolean {
   return signal?.aborted === true || isAbortError(err)
 }
 
-export interface ModelListOptions {
-  apiKey: string
-  signal?: AbortSignal
-}
-
 const NON_TEXT_KEYWORDS = [
   'image',
   'imagen',
@@ -86,7 +83,7 @@ export function isTextModel(id: string, supportedActions?: string[]): boolean {
 export async function fetchGeminiModels({
   apiKey,
   signal,
-}: ModelListOptions): Promise<GeminiModel[]> {
+}: ModelListOptions): Promise<ModelOption[]> {
   const { GoogleGenAI } = await import('@google/genai')
   const ai = new GoogleGenAI({ apiKey })
   try {
@@ -96,7 +93,7 @@ export async function fetchGeminiModels({
       },
     })
 
-    const fetched: GeminiModel[] = []
+    const fetched: ModelOption[] = []
     for await (const model of pager) {
       if (!model.name)
         continue
@@ -109,18 +106,7 @@ export async function fetchGeminiModels({
       })
     }
 
-    const results: GeminiModel[] = []
-    for (const rec of RECOMMENDED_MODELS) {
-      const existing = fetched.find(m => m.id === rec.id)
-      results.push(existing || rec)
-    }
-    for (const model of fetched) {
-      if (!results.some(r => r.id === model.id)) {
-        results.push(model)
-      }
-    }
-
-    return results
+    return mergeRecommendedModels(RECOMMENDED_MODELS, fetched)
   }
   catch (err) {
     if (isCancelled(err, signal))
@@ -129,21 +115,13 @@ export async function fetchGeminiModels({
   }
 }
 
-export interface GeminiStreamOptions {
-  apiKey: string
-  model: string
-  systemPrompt: string
-  userPrompt: string
-  signal?: AbortSignal
-}
-
 export async function streamGeminiCompletion({
   apiKey,
   model,
   systemPrompt,
   userPrompt,
   signal,
-}: GeminiStreamOptions): Promise<ResearchChunkStream> {
+}: CompletionStreamOptions): Promise<ResearchChunkStream> {
   const { GoogleGenAI } = await import('@google/genai')
   const ai = new GoogleGenAI({ apiKey })
 
@@ -179,4 +157,16 @@ export async function streamGeminiCompletion({
   }
 
   return generator()
+}
+
+export const geminiProvider: CloudProvider = {
+  id: 'gemini',
+  name: 'Gemini',
+  defaultModel: DEFAULT_GEMINI_MODEL,
+  keyPlaceholder: 'AIzaSy…',
+  keyConsoleUrl: 'https://aistudio.google.com/apikey',
+  keyConsoleName: 'Google AI Studio',
+  billingNote: 'Free keys are available.',
+  fetchModels: fetchGeminiModels,
+  streamCompletion: streamGeminiCompletion,
 }
