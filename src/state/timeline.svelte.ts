@@ -1,5 +1,6 @@
 import type { Timeline } from '../domain/timeline'
 import {
+  DEFAULT_DOB,
   GRID_FADE_MS,
   LIFESPAN_DEFAULT_YEARS,
   LIFESPAN_MAX_YEARS,
@@ -8,6 +9,7 @@ import {
 import { renderMarkdown } from '../domain/markdown'
 import { calculateTimeline, getWeekAge, getWeekStartDate } from '../domain/timeline'
 import { parseLocalDate } from '../lib/date'
+import { getErrorMessage, isAbortError } from '../lib/errors'
 import {
   createResearchStream,
   isLocalModelSupported,
@@ -46,10 +48,10 @@ function createIdleResearch(): ResearchState {
 
 type FailureStatus = Extract<ResearchState['status'], 'unsupported' | 'unavailable' | 'error'>
 
-const LOCAL_MODEL_FAILURES: Record<string, { status: FailureStatus, message: string }> = {
-  [LOCAL_MODEL_NEEDS_USER_ACTIVATION]: { status: 'error', message: 'Click a week to download the on-device model.' },
-  [LOCAL_MODEL_UNAVAILABLE]: { status: 'unavailable', message: 'The model is not ready on this device.' },
-}
+const LOCAL_MODEL_FAILURES = new Map<string, { status: FailureStatus, message: string }>([
+  [LOCAL_MODEL_NEEDS_USER_ACTIVATION, { status: 'error', message: 'Click a week to download the on-device model.' }],
+  [LOCAL_MODEL_UNAVAILABLE, { status: 'unavailable', message: 'The model is not ready on this device.' }],
+])
 
 export interface TimelineInput {
   dob: string
@@ -58,7 +60,7 @@ export interface TimelineInput {
 }
 
 export class TimelineState {
-  dob = $state('1997-11-21')
+  dob = $state(DEFAULT_DOB)
   country = $state('')
   lifespan = $state(LIFESPAN_DEFAULT_YEARS)
 
@@ -67,7 +69,7 @@ export class TimelineState {
   isGridLoaded = $state(false)
 
   timeline = $state.raw<Timeline | null>(null)
-  displayedDob = $state<string>('1997-11-21')
+  displayedDob = $state(DEFAULT_DOB)
   displayedLifespan = $state<number>(LIFESPAN_DEFAULT_YEARS)
   displayedCountry = $state('')
 
@@ -224,14 +226,14 @@ export class TimelineState {
       this.research.statusMessage = 'Research ready.'
       return completeResult
     }
-    catch (err: any) {
-      if (err?.name === 'AbortError')
+    catch (err: unknown) {
+      if (isAbortError(err))
         return null
 
-      const failure = LOCAL_MODEL_FAILURES[err?.message]
+      const failure = LOCAL_MODEL_FAILURES.get(getErrorMessage(err))
       if (!failure)
         console.error(err)
-      const { status, message } = failure ?? { status: 'error', message: `Research failed: ${err?.message || err}` }
+      const { status, message } = failure ?? { status: 'error', message: `Research failed: ${getErrorMessage(err)}` }
       return isCurrent() ? this.showFailure(status, message) : message
     }
   }

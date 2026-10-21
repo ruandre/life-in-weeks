@@ -1,4 +1,5 @@
 import type { GeminiKeyStatus, GeminiModel, ResearchProvider } from '../types'
+import { isAbortError } from '../lib/errors'
 import {
   DEFAULT_GEMINI_MODEL,
   fetchGeminiModels,
@@ -108,13 +109,13 @@ export class SettingsState {
       this.models = models
       this.selectDefaultModel(models)
     }
-    catch (err: any) {
+    catch (err: unknown) {
       this.recordFailure(err, controller)
     }
   }
 
-  private recordFailure(err: any, controller: AbortController): void {
-    if (err?.name === 'AbortError' || controller.signal.aborted)
+  private recordFailure(err: unknown, controller: AbortController): void {
+    if (isAbortError(err) || controller.signal.aborted)
       return
     this.keyStatus = 'invalid'
     this.keyError = formatGeminiError(err) || 'Could not reach Gemini API.'

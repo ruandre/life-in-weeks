@@ -1,4 +1,6 @@
+import type { GenerateContentResponse } from '@google/genai'
 import type { GeminiModel, ResearchChunkStream } from '../types'
+import { isAbortError } from '../lib/errors'
 
 export const RECOMMENDED_MODELS: GeminiModel[] = [
   { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
@@ -38,12 +40,8 @@ export function formatGeminiError(err: unknown): string {
   return String(err || 'Unknown error')
 }
 
-function isAbortError(err: unknown, signal?: AbortSignal): boolean {
-  if (signal?.aborted)
-    return true
-  if (err && typeof err === 'object' && 'name' in err && err.name === 'AbortError')
-    return true
-  return false
+function isCancelled(err: unknown, signal?: AbortSignal): boolean {
+  return signal?.aborted === true || isAbortError(err)
 }
 
 export interface ModelListOptions {
@@ -125,7 +123,7 @@ export async function fetchGeminiModels({
     return results
   }
   catch (err) {
-    if (isAbortError(err, signal))
+    if (isCancelled(err, signal))
       throw err
     throw new Error(formatGeminiError(err))
   }
@@ -149,7 +147,7 @@ export async function streamGeminiCompletion({
   const { GoogleGenAI } = await import('@google/genai')
   const ai = new GoogleGenAI({ apiKey })
 
-  let responseStream: AsyncGenerator<any, void, unknown>
+  let responseStream: AsyncGenerator<GenerateContentResponse>
   try {
     responseStream = await ai.models.generateContentStream({
       model,
@@ -161,7 +159,7 @@ export async function streamGeminiCompletion({
     })
   }
   catch (err) {
-    if (isAbortError(err, signal))
+    if (isCancelled(err, signal))
       throw err
     throw new Error(formatGeminiError(err))
   }
@@ -174,7 +172,7 @@ export async function streamGeminiCompletion({
       }
     }
     catch (err) {
-      if (isAbortError(err, signal))
+      if (isCancelled(err, signal))
         throw err
       throw new Error(formatGeminiError(err))
     }

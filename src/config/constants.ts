@@ -3,6 +3,7 @@ export const WEEKS_PER_YEAR = 52
 export const LIFESPAN_MIN_YEARS = 1
 export const LIFESPAN_MAX_YEARS = 120
 export const LIFESPAN_DEFAULT_YEARS = 70
+export const DEFAULT_DOB = '1997-11-21'
 
 // Sync with CSS transitions
 export const GRID_FADE_MS = 300

@@ -223,6 +223,17 @@ describe('selectWeek outcomes', () => {
     expect(state.research.statusMessage).toBe('Research failed: boom')
   })
 
+  it('does not mistake an error message that names an object member for a known failure', async () => {
+    vi.spyOn(console, 'error').mockImplementationOnce(() => {})
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('constructor'))
+    const state = generatedState()
+
+    const result = await state.selectWeek(1)
+
+    expect(result).toBe('Research failed: constructor')
+    expect(state.research.status).toBe('error')
+  })
+
   it('leaves the newer selection alone when a superseded stream resolves late', async () => {
     let resolveFirst: (stream: AsyncIterable<string>) => void = () => {}
     vi.mocked(createResearchStream)
