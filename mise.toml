@@ -88,7 +88,7 @@ echo "== npm packages (Wanted honors minimumReleaseAge) =="
 # Exit status 1 only means updates exist.
 aube outdated || [[ $? -eq 1 ]]
 echo
-echo "Not checked: GitHub Actions SHAs in .github/workflows."
+echo "GitHub Actions: run \"mise run actions:verify\" (needs GitHub API)."
 """
 
 [tasks."actions:verify"]
