@@ -315,6 +315,7 @@
 
 <style>
   .main-content {
+    isolation: isolate;
     padding: var(--space-4) var(--space-6);
     display: flex;
     align-items: center;

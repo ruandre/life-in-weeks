@@ -149,6 +149,7 @@
   }
 
   .research-panel {
+    isolation: isolate;
     padding: var(--space-8) var(--space-8) var(--space-3);
     border-left: 1px solid var(--border);
     height: 100dvh;

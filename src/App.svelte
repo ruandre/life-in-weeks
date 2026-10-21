@@ -66,6 +66,12 @@
 </div>
 
 <style>
+  /* Stacking isolation contains child z-indices */
+  .layout,
+  .sidebar {
+    isolation: isolate;
+  }
+
   .layout {
     display: grid;
     grid-template-columns: minmax(260px, 300px) 1fr minmax(280px, 340px);
