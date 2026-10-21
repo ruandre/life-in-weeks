@@ -16,6 +16,7 @@ pkl = "0.32.1"
 typos = "1.51.1"
 actionlint = "1.7.12"
 betterleaks = "1.9.0"
+pinact = "5.0.0"
 
 [env]
 _.path = [ "{{config_root}}/node_modules/.bin" ]
@@ -89,6 +90,14 @@ aube outdated || [[ $? -eq 1 ]]
 echo
 echo "Not checked: GitHub Actions SHAs in .github/workflows."
 """
+
+[tasks."actions:verify"]
+description = "Verify every GitHub Action pin: SHA matches its version comment and the release is at least 3 days old (GitHub API)"
+run = "pinact run --check --verify-comment --min-age 3"
+
+[tasks."actions:update"]
+description = "Move GitHub Actions to their latest releases at least 3 days old, pinned to verified commit SHAs"
+run = "pinact run --update --verify-comment --min-age 3"
 
 [tasks.check]
 description = "Quality gate before a commit: lint, typecheck, test"
