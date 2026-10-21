@@ -26,17 +26,17 @@ afterEach(() => {
 
 function generatedState(): TimelineState {
   const state = new TimelineState()
-  state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+  state.restore({ dob: '2000-01-01', country: '', lifespan: 70 })
   return state
 }
 
 describe('generate', () => {
   it('clears research for the previous inputs', async () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    state.restore({ dob: '2000-01-01', country: '', lifespan: 70 })
     await state.selectWeek(10)
 
-    state.generate({ dob: '1980-06-15', country: '', lifespan: 70 }, true)
+    state.restore({ dob: '1980-06-15', country: '', lifespan: 70 })
 
     expect(state.selectedWeek).toBeNull()
     expect(state.research.status).toBe('idle')
@@ -44,21 +44,21 @@ describe('generate', () => {
 
   it('cancels research still running for the previous inputs', async () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    state.restore({ dob: '2000-01-01', country: '', lifespan: 70 })
     void state.selectWeek(10)
     const { signal } = vi.mocked(createResearchStream).mock.calls[0][0]
 
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 40 }, true)
+    state.restore({ dob: '2000-01-01', country: '', lifespan: 40 })
 
     expect(signal?.aborted).toBe(true)
   })
 
   it('keeps research when regenerating unchanged inputs', async () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    state.restore({ dob: '2000-01-01', country: '', lifespan: 70 })
     await state.selectWeek(10)
 
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, true)
+    state.restore({ dob: '2000-01-01', country: '', lifespan: 70 })
 
     expect(state.selectedWeek).toBe(10)
     expect(state.research.status).toBe('ready')
@@ -76,9 +76,9 @@ describe('generate fade', () => {
 
   it('drops a pending fade when regenerated immediately', () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, false)
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
 
-    state.generate({ dob: '1980-06-15', country: '', lifespan: 40 }, true)
+    state.restore({ dob: '1980-06-15', country: '', lifespan: 40 })
     vi.advanceTimersByTime(GRID_FADE_MS)
 
     expect(state.displayedDob).toBe('1980-06-15')
@@ -87,10 +87,10 @@ describe('generate fade', () => {
 
   it('applies only the latest of overlapping fades', () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, false)
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
     vi.advanceTimersByTime(GRID_FADE_MS / 3)
 
-    state.generate({ dob: '1980-06-15', country: '', lifespan: 40 }, false)
+    state.generate({ dob: '1980-06-15', country: '', lifespan: 40 })
     vi.advanceTimersByTime(GRID_FADE_MS * 2 / 3)
 
     expect(state.timeline).toBeNull()
@@ -103,9 +103,9 @@ describe('generate fade', () => {
 
   it('keeps a pending fade when a rejected generate follows', () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 }, false)
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
 
-    expect(state.generate({ dob: '2999-01-01', country: '', lifespan: 70 }, false)).toBe(false)
+    expect(state.generate({ dob: '2999-01-01', country: '', lifespan: 70 })).toBe(false)
     vi.advanceTimersByTime(GRID_FADE_MS)
 
     expect(state.displayedDob).toBe('2000-01-01')
@@ -116,7 +116,7 @@ describe('generate fade', () => {
 describe('selectWeek', () => {
   it('researches with the country submitted on generate, not the draft', async () => {
     const state = new TimelineState()
-    state.generate({ dob: '2000-01-01', country: 'France', lifespan: 70 }, true)
+    state.restore({ dob: '2000-01-01', country: 'France', lifespan: 70 })
     state.country = 'Fr'
 
     await state.selectWeek(1)

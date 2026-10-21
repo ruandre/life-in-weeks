@@ -11,7 +11,7 @@
   onMount(() => {
     const { dob, country, lifespan } = timelineState
     if (dob && lifespan) {
-      timelineState.generate({ dob, country, lifespan }, true)
+      timelineState.restore({ dob, country, lifespan })
     }
 
     const cleanupWebMCP = initWebMCP({

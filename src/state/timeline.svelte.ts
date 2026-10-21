@@ -83,7 +83,17 @@ export class TimelineState {
   private activeController: AbortController | null = null
   private fadeTimer: ReturnType<typeof setTimeout> | null = null
 
-  generate({ dob: dobStr, country, lifespan: lifespanYears }: TimelineInput, immediate = false): boolean {
+  /** User action: fades the grid out before the new timeline appears */
+  generate(input: TimelineInput): boolean {
+    return this.applyTimeline(input, GRID_FADE_MS)
+  }
+
+  /** Initial load: shows the saved timeline without a fade */
+  restore(input: TimelineInput): boolean {
+    return this.applyTimeline(input, 0)
+  }
+
+  private applyTimeline({ dob: dobStr, country, lifespan: lifespanYears }: TimelineInput, fadeMs: number): boolean {
     const dob = parseLocalDate(dobStr)
     if (!dob || dob.getTime() > Date.now())
       return false
@@ -127,12 +137,10 @@ export class TimelineState {
       })
     }
 
-    if (immediate) {
+    if (fadeMs === 0)
       apply()
-    }
-    else {
-      this.fadeTimer = setTimeout(apply, GRID_FADE_MS)
-    }
+    else
+      this.fadeTimer = setTimeout(apply, fadeMs)
 
     return true
   }
