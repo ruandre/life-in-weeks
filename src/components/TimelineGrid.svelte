@@ -570,6 +570,30 @@
     box-shadow: oklch(0.9702 0 0 / 0.8) 0 0 0 2px inset;
   }
 
+  /* Must live here: unlayered component rules beat any @layer override */
+  @media (forced-colors: active) {
+    .week {
+      forced-color-adjust: auto;
+      border: 1px solid ButtonBorder;
+    }
+
+    .week.passed,
+    .week.passed:hover,
+    .week.passed:focus-visible {
+      background: Highlight;
+      border-color: Highlight;
+    }
+
+    .week.current {
+      outline: 2px solid CanvasText;
+      background: CanvasText;
+    }
+
+    .week.selected {
+      outline: 2px solid Highlight;
+    }
+  }
+
   .empty-state {
     position: absolute;
     top: 50%;

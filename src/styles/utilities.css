@@ -57,25 +57,6 @@
   }
 
   @media (forced-colors: active) {
-    .week {
-      forced-color-adjust: auto;
-      border: 1px solid ButtonBorder;
-    }
-
-    .week.passed {
-      background: Highlight;
-      border-color: Highlight;
-    }
-
-    .week.current {
-      outline: 2px solid CanvasText;
-      background: CanvasText;
-    }
-
-    .week.selected {
-      outline: 2px solid Highlight;
-    }
-
     :where(a:any-link, button):focus-visible {
       outline: 3px solid Highlight;
     }
