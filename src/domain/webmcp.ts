@@ -30,7 +30,7 @@ export function initWebMCP({ getDob, getLifespan, selectWeek }: WebMCPOptions): 
         type: 'object',
         properties: {
           week_index: {
-            type: 'number',
+            type: 'integer',
             description: 'The 1-based index of the week to research, within the range currently rendered on the timeline.',
           },
         },

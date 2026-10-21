@@ -84,6 +84,13 @@ describe('initWebMCP registration', () => {
 describe('select_and_research_week', () => {
   beforeEach(() => stubModelContext())
 
+  it('declares week_index as a required integer', () => {
+    init()
+    const { inputSchema } = toolNamed('select_and_research_week')
+    expect(inputSchema.properties.week_index).toMatchObject({ type: 'integer' })
+    expect(inputSchema.required).toEqual(['week_index'])
+  })
+
   it.each([1.5, 0, -3, Number.NaN])('rejects week_index %s without selecting', async (weekIndex) => {
     const selectWeek = vi.fn(async () => 'research')
     init({ selectWeek })
