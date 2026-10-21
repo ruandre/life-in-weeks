@@ -22,12 +22,12 @@ importers:
         specifier: ^2.30.0
         version: 2.30.0
       '@lucide/svelte':
-        specifier: ^1.39.0
-        version: 1.39.0(svelte@5.57.2)
+        specifier: ^1.59.0
+        version: 1.59.0(svelte@5.57.2)
     devDependencies:
       '@antfu/eslint-config':
         specifier: ^9.5.1
-        version: 9.5.1(eslint@10.13.0)(eslint-plugin-format@2.0.1(eslint@10.13.0))(eslint-plugin-svelte@3.23.1(eslint@10.13.0)(svelte@5.57.2))(svelte-eslint-parser@1.9.0(svelte@5.57.2))
+        version: 9.5.1(eslint-plugin-format@2.0.1(eslint@10.13.0))(eslint-plugin-svelte@3.23.1(eslint@10.13.0)(svelte@5.57.2))(eslint@10.13.0)(svelte-eslint-parser@1.9.0(svelte@5.57.2))
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.3.1
         version: 7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@26.4.0)(yaml@2.9.0))
@@ -566,8 +566,8 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@lucide/svelte@1.39.0':
-    resolution: {integrity: sha512-jCgA/RqDv9uWHs4DiIUef4kpf5TfLl9y8OMGrh+W4aQTCOscT4X2BX14ta65J+5ooslrN1bXXiO9AaeAOHAcPA==}
+  '@lucide/svelte@1.59.0':
+    resolution: {integrity: sha512-ga9IrEsFJBkt/34VnRFcQ2HLs8eOpOovXZ62XzwfC7f0zBfo4y116FBIDroZkD0gInYYY2hSSAcsQEm/Vm+AoA==}
     peerDependencies:
       svelte: ^5
 
@@ -2828,7 +2828,7 @@ packages:
 
 snapshots:
 
-  '@antfu/eslint-config@9.5.1(eslint@10.13.0)(eslint-plugin-format@2.0.1(eslint@10.13.0))(eslint-plugin-svelte@3.23.1(eslint@10.13.0)(svelte@5.57.2))(svelte-eslint-parser@1.9.0(svelte@5.57.2))':
+  '@antfu/eslint-config@9.5.1(eslint-plugin-format@2.0.1(eslint@10.13.0))(eslint-plugin-svelte@3.23.1(eslint@10.13.0)(svelte@5.57.2))(eslint@10.13.0)(svelte-eslint-parser@1.9.0(svelte@5.57.2))':
     dependencies:
       '@antfu/install-pkg': 2.0.1
       '@clack/prompts': 1.7.0
@@ -3241,7 +3241,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@lucide/svelte@1.39.0(svelte@5.57.2)':
+  '@lucide/svelte@1.59.0(svelte@5.57.2)':
     dependencies:
       svelte: 5.57.2(@typescript-eslint/types@8.69.0)
 
