@@ -1,17 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_FADE_MS } from '../config/constants'
+import { LocalModelError } from '../services/local-model'
 import { createResearchStream, isLocalModelSupported } from '../services/research-service'
 import { settingsState } from './settings.svelte'
 import { TimelineState } from './timeline.svelte'
 
-vi.mock('../services/research-service', () => ({
+vi.mock('../services/research-service', async () => ({
   createResearchStream: vi.fn(async () => (async function* () {
     yield 'done'
   })()),
   isLocalModelSupported: vi.fn(() => true),
   warmUpLocalModel: async () => {},
-  LOCAL_MODEL_NEEDS_USER_ACTIVATION: 'NEEDS_USER_ACTIVATION',
-  LOCAL_MODEL_UNAVAILABLE: 'UNAVAILABLE',
+  LocalModelError: (await vi.importActual<typeof import('../services/local-model')>('../services/local-model')).LocalModelError,
 }))
 
 beforeEach(() => {
@@ -226,7 +226,7 @@ describe('selectWeek outcomes', () => {
   })
 
   it('asks for a click when the model download needs a user gesture', async () => {
-    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('NEEDS_USER_ACTIVATION'))
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new LocalModelError('needs-user-activation'))
     const state = generatedState()
 
     const result = await state.selectWeek(1)
@@ -236,7 +236,7 @@ describe('selectWeek outcomes', () => {
   })
 
   it('reports unavailable when the device cannot run the model', async () => {
-    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('UNAVAILABLE'))
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new LocalModelError('unavailable'))
     const state = generatedState()
 
     const result = await state.selectWeek(1)
@@ -255,6 +255,15 @@ describe('selectWeek outcomes', () => {
     expect(result).toBe('Research failed: boom')
     expect(state.research.errorMessage).toBe('Research failed: boom')
     expect(state.research.statusMessage).toBe('Research failed: boom')
+  })
+
+  it('does not mistake a cloud error that reads like a local failure for one', async () => {
+    vi.spyOn(console, 'error').mockImplementationOnce(() => {})
+    vi.mocked(createResearchStream).mockRejectedValueOnce(new Error('UNAVAILABLE'))
+    const state = generatedState()
+
+    expect(await state.selectWeek(1)).toBe('Research failed: UNAVAILABLE')
+    expect(state.research.status).toBe('error')
   })
 
   it('does not mistake an error message that names an object member for a known failure', async () => {

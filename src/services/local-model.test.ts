@@ -2,8 +2,7 @@ import type { LanguageModelAvailability, LanguageModelCreateOptions, LanguageMod
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   checkLocalModelAvailability,
-  LOCAL_MODEL_NEEDS_USER_ACTIVATION,
-  LOCAL_MODEL_UNAVAILABLE,
+  LocalModelError,
   resetLocalModelForTesting,
   streamLocalCompletion,
   warmUpLocalModel,
@@ -97,12 +96,13 @@ describe('warmUpLocalModel', () => {
 })
 
 describe('streamLocalCompletion', () => {
-  it('rejects with UNAVAILABLE when the device cannot run the model', async () => {
+  it('rejects as unavailable when the device cannot run the model', async () => {
     stubLanguageModel('unavailable')
 
-    await expect(streamLocalCompletion({ userPrompt: 'hi' }))
-      .rejects
-      .toThrow(LOCAL_MODEL_UNAVAILABLE)
+    const failure = streamLocalCompletion({ userPrompt: 'hi' })
+
+    await expect(failure).rejects.toBeInstanceOf(LocalModelError)
+    await expect(failure).rejects.toMatchObject({ code: 'unavailable' })
   })
 
   it('rejects without creating a session when a download needs a user gesture', async () => {
@@ -110,7 +110,7 @@ describe('streamLocalCompletion', () => {
 
     await expect(streamLocalCompletion({ userPrompt: 'hi' }))
       .rejects
-      .toThrow(LOCAL_MODEL_NEEDS_USER_ACTIVATION)
+      .toMatchObject({ code: 'needs-user-activation' })
     expect(LM.create).not.toHaveBeenCalled()
   })
 

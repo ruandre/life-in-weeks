@@ -5,10 +5,10 @@ import { getWeekAge, getWeekEndDate, getWeekStartDate } from '../domain/timeline
 import { CLOUD_PROVIDERS } from './cloud-provider-registry'
 import { streamLocalCompletion } from './local-model'
 
+export type { LocalModelFailure } from './local-model'
 export {
   isLocalModelSupported,
-  LOCAL_MODEL_NEEDS_USER_ACTIVATION,
-  LOCAL_MODEL_UNAVAILABLE,
+  LocalModelError,
   warmUpLocalModel,
 } from './local-model'
 

@@ -1,4 +1,5 @@
 import type { Timeline } from '../domain/timeline'
+import type { LocalModelFailure } from '../services/research-service'
 import { GRID_FADE_MS, LIFESPAN_DEFAULT_YEARS } from '../config/constants'
 import { renderMarkdown } from '../domain/markdown'
 import { calculateTimeline, getWeekAge, getWeekStartDate } from '../domain/timeline'
@@ -7,8 +8,7 @@ import { getErrorMessage, isAbortError } from '../lib/errors'
 import {
   createResearchStream,
   isLocalModelSupported,
-  LOCAL_MODEL_NEEDS_USER_ACTIVATION,
-  LOCAL_MODEL_UNAVAILABLE,
+  LocalModelError,
   warmUpLocalModel,
 } from '../services/research-service'
 import { settingsState } from './settings.svelte'
@@ -42,10 +42,22 @@ function createIdleResearch(): ResearchState {
 
 type FailureStatus = Extract<ResearchState['status'], 'unsupported' | 'unavailable' | 'error'>
 
-const LOCAL_MODEL_FAILURES = new Map<string, { status: FailureStatus, message: string }>([
-  [LOCAL_MODEL_NEEDS_USER_ACTIVATION, { status: 'error', message: 'Click a week to download the on-device model.' }],
-  [LOCAL_MODEL_UNAVAILABLE, { status: 'unavailable', message: 'The model is not ready on this device.' }],
-])
+interface Failure {
+  status: FailureStatus
+  message: string
+}
+
+const LOCAL_MODEL_FAILURES: Record<LocalModelFailure, Failure> = {
+  'needs-user-activation': { status: 'error', message: 'Click a week to download the on-device model.' },
+  'unavailable': { status: 'unavailable', message: 'The model is not ready on this device.' },
+}
+
+function describeFailure(err: unknown): Failure {
+  if (err instanceof LocalModelError)
+    return LOCAL_MODEL_FAILURES[err.code]
+  console.error(err)
+  return { status: 'error', message: `Research failed: ${getErrorMessage(err)}` }
+}
 
 export interface TimelineInput {
   dob: string
@@ -223,10 +235,7 @@ export class TimelineState {
       if (isAbortError(err))
         return null
 
-      const failure = LOCAL_MODEL_FAILURES.get(getErrorMessage(err))
-      if (!failure)
-        console.error(err)
-      const { status, message } = failure ?? { status: 'error', message: `Research failed: ${getErrorMessage(err)}` }
+      const { status, message } = describeFailure(err)
       return isCurrent() ? this.showFailure(status, message) : message
     }
   }

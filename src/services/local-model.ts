@@ -7,8 +7,15 @@ import type {
 } from '../types'
 import { SYSTEM_PROMPT } from '../domain/research-prompt'
 
-export const LOCAL_MODEL_UNAVAILABLE = 'UNAVAILABLE'
-export const LOCAL_MODEL_NEEDS_USER_ACTIVATION = 'NEEDS_USER_ACTIVATION'
+export type LocalModelFailure = 'unavailable' | 'needs-user-activation'
+
+export class LocalModelError extends Error {
+  override readonly name = 'LocalModelError'
+
+  constructor(readonly code: LocalModelFailure) {
+    super(`On-device model failure: ${code}`)
+  }
+}
 
 // availability() answers accurately only when given create() options
 const LANGUAGE_OPTIONS = {
@@ -84,8 +91,8 @@ export interface LocalModelStreamOptions {
 }
 
 /**
- * Throws LOCAL_MODEL_UNAVAILABLE when device cannot run model;
- * LOCAL_MODEL_NEEDS_USER_ACTIVATION when download must start from user gesture
+ * Throws LocalModelError 'unavailable' when device cannot run model;
+ * 'needs-user-activation' when download must start from user gesture
  */
 export async function streamLocalCompletion({
   userPrompt,
@@ -94,11 +101,11 @@ export async function streamLocalCompletion({
 }: LocalModelStreamOptions): Promise<ResearchChunkStream> {
   const availability = await checkLocalModelAvailability()
   if (availability === 'unavailable')
-    throw new Error(LOCAL_MODEL_UNAVAILABLE)
+    throw new LocalModelError('unavailable')
 
   const needsDownload = availability !== 'available'
   if (needsDownload && !baseSessionPromise && !hasUserActivation())
-    throw new Error(LOCAL_MODEL_NEEDS_USER_ACTIVATION)
+    throw new LocalModelError('needs-user-activation')
 
   downloadProgressListener = needsDownload ? onDownloadProgress ?? null : null
 
