@@ -1,4 +1,4 @@
-import type { CloudProviderId, ResearchChunkStream, ResearchProvider } from '../types'
+import type { CloudProviderId, ResearchChunkStream, ResearchEffort, ResearchProvider } from '../types'
 import type { CloudCredentials } from './cloud-provider'
 import { buildResearchPrompt, SYSTEM_PROMPT } from '../domain/research-prompt'
 import { getWeekAge, getWeekEndDate, getWeekStartDate } from '../domain/timeline'
@@ -23,15 +23,18 @@ export interface ResearchStreamOptions {
   country?: string | null
   provider: ResearchProvider
   credentials?: CloudCredentials | null
+  effort?: ResearchEffort | null
   signal?: AbortSignal
   onDownloadProgress?: (loaded: number) => void
 }
 
+interface CloudRequest extends Pick<ResearchStreamOptions, 'credentials' | 'effort' | 'signal'> {
+  userPrompt: string
+}
+
 async function streamFromCloud(
   providerId: CloudProviderId,
-  credentials: CloudCredentials | null | undefined,
-  userPrompt: string,
-  signal?: AbortSignal,
+  { credentials, effort, userPrompt, signal }: CloudRequest,
 ): Promise<ResearchChunkStream> {
   // eslint-disable-next-line security/detect-object-injection -- providerId is a CloudProviderId union key
   const provider = CLOUD_PROVIDERS[providerId]
@@ -43,6 +46,7 @@ async function streamFromCloud(
     model: credentials.model,
     systemPrompt: SYSTEM_PROMPT,
     userPrompt,
+    effort,
     signal,
   })
 }
@@ -54,6 +58,7 @@ export async function createResearchStream({
   country,
   provider,
   credentials,
+  effort,
   signal,
   onDownloadProgress,
 }: ResearchStreamOptions): Promise<ResearchChunkStream> {
@@ -71,7 +76,7 @@ export async function createResearchStream({
 
   const stream = provider === 'local'
     ? await streamLocalCompletion({ userPrompt, signal, onDownloadProgress })
-    : await streamFromCloud(provider, credentials, userPrompt, signal)
+    : await streamFromCloud(provider, { credentials, effort, userPrompt, signal })
   throwIfAborted(signal)
   return stream
 }

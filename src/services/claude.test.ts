@@ -27,6 +27,14 @@ vi.mock('@anthropic-ai/sdk', () => ({
 interface ListedModel {
   id: string
   display_name?: string
+  capabilities?: { effort: { supported: boolean } & Record<'low' | 'medium' | 'high', { supported: boolean }> } | null
+}
+
+function effortCapabilities(levels: Partial<Record<'low' | 'medium' | 'high', boolean>>): ListedModel['capabilities'] {
+  const support = (isSupported = false) => ({ supported: isSupported })
+  return {
+    effort: { supported: true, low: support(levels.low), medium: support(levels.medium), high: support(levels.high) },
+  }
 }
 
 interface FinalMessage {
@@ -128,9 +136,25 @@ describe('fetchClaudeModels', () => {
     const models = await fetchClaudeModels({ apiKey: 'k' })
 
     expect(models.slice(RECOMMENDED_CLAUDE_MODELS.length)).toEqual([
-      { id: 'claude-test-1', name: 'Claude Test' },
-      { id: 'claude-test-2', name: 'claude-test-2' },
+      { id: 'claude-test-1', name: 'Claude Test', supportsEffort: false },
+      { id: 'claude-test-2', name: 'claude-test-2', supportsEffort: false },
     ])
+  })
+
+  it('offers effort only on models that accept low, medium and high', async () => {
+    listModels([
+      { id: 'claude-all', capabilities: effortCapabilities({ low: true, medium: true, high: true }) },
+      { id: 'claude-partial', capabilities: effortCapabilities({ low: false, medium: true, high: true }) },
+      { id: 'claude-unknown', capabilities: null },
+    ])
+
+    const models = await fetchClaudeModels({ apiKey: 'k' })
+
+    expect(models.slice(RECOMMENDED_CLAUDE_MODELS.length).map(model => model.supportsEffort)).toEqual([true, false, false])
+  })
+
+  it('offers effort on every recommended model', () => {
+    expect(RECOMMENDED_CLAUDE_MODELS.every(model => model.supportsEffort)).toBe(true)
   })
 
   it('lists recommended models first, replacing them with fetched entries of the same id', async () => {
@@ -144,10 +168,10 @@ describe('fetchClaudeModels', () => {
     const models = await fetchClaudeModels({ apiKey: 'k' })
 
     expect(models).toEqual([
-      { id: first.id, name: 'Fetched first' },
+      { id: first.id, name: 'Fetched first', supportsEffort: false },
       second,
-      { id: third.id, name: 'Fetched third' },
-      { id: 'claude-other', name: 'Other' },
+      { id: third.id, name: 'Fetched third', supportsEffort: false },
+      { id: 'claude-other', name: 'Other', supportsEffort: false },
     ])
   })
 
@@ -197,6 +221,17 @@ describe('streamClaudeCompletion', () => {
       system: 'You are a historian',
       messages: [{ role: 'user', content: 'What happened this week?' }],
     }, { signal })
+  })
+
+  it('sends the chosen effort', async () => {
+    streamEvents([])
+
+    await drain(await streamClaudeCompletion({ ...request, effort: 'medium' }))
+
+    expect(anthropic.stream).toHaveBeenCalledWith(
+      expect.objectContaining({ output_config: { effort: 'medium' } }),
+      expect.anything(),
+    )
   })
 
   it('yields only text deltas', async () => {

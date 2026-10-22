@@ -69,6 +69,12 @@ describe('createResearchStream', () => {
     expect(streamClaudeCompletion).toHaveBeenCalledWith(expect.objectContaining(claudeCredentials))
   })
 
+  it('passes the chosen effort to the cloud provider', async () => {
+    await createResearchStream({ weekIndex: 1, dobDate, provider: 'claude', credentials, effort: 'high' })
+
+    expect(streamClaudeCompletion).toHaveBeenCalledWith(expect.objectContaining({ effort: 'high' }))
+  })
+
   it('names the selected provider when credentials are missing', async () => {
     await expect(createResearchStream({ weekIndex: 1, dobDate, provider: 'claude', credentials: null }))
       .rejects

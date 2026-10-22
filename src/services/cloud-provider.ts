@@ -1,4 +1,4 @@
-import type { CloudProviderId, ModelOption, ResearchChunkStream } from '../types'
+import type { CloudProviderId, ModelOption, ResearchChunkStream, ResearchEffort } from '../types'
 
 export interface ModelListOptions {
   apiKey: string
@@ -10,6 +10,8 @@ export interface CompletionStreamOptions {
   model: string
   systemPrompt: string
   userPrompt: string
+  /** Omitted leaves the model's default; providers without effort ignore it */
+  effort?: ResearchEffort | null
   signal?: AbortSignal
 }
 

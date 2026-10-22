@@ -50,9 +50,14 @@ export type CloudProviderId = 'gemini' | 'claude'
 
 export type ResearchProvider = 'local' | CloudProviderId
 
+/** Effort levels the app offers; the API also has xhigh and max */
+export type ResearchEffort = 'low' | 'medium' | 'high'
+
 export interface ModelOption {
   id: string
   name: string
+  /** Accepts every ResearchEffort level; absent for providers without effort */
+  supportsEffort?: boolean
 }
 
 export type KeyStatus = 'empty' | 'checking' | 'valid' | 'invalid'

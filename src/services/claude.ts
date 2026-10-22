@@ -1,13 +1,14 @@
 import type { Message, MessageStreamEvent } from '@anthropic-ai/sdk/resources/messages'
+import type { ModelInfo } from '@anthropic-ai/sdk/resources/models'
 import type { ModelOption, ResearchChunkStream } from '../types'
 import type { CloudProvider, CompletionStreamOptions, ModelListOptions } from './cloud-provider'
 import { mergeRecommendedModels } from '../domain/model-options'
 import { getErrorMessage, isAbortError } from '../lib/errors'
 
 export const RECOMMENDED_CLAUDE_MODELS: ModelOption[] = [
-  { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5' },
-  { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5' },
-  { id: 'claude-opus-5-5', name: 'Claude Opus 5.5' },
+  { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5', supportsEffort: true },
+  { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5', supportsEffort: true },
+  { id: 'claude-opus-5-5', name: 'Claude Opus 5.5', supportsEffort: true },
 ]
 
 export const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-5-5'
@@ -33,6 +34,12 @@ function toReadableError(err: unknown, signal?: AbortSignal): unknown {
   return new Error(formatClaudeError(err))
 }
 
+// Older models reject output_config.effort; unknown capabilities count as unsupported
+function supportsEffort({ capabilities }: Pick<ModelInfo, 'capabilities'>): boolean {
+  const effort = capabilities?.effort
+  return Boolean(effort?.supported && effort.low.supported && effort.medium.supported && effort.high.supported)
+}
+
 async function createClient(apiKey: string) {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
   // Key is user supplied and held in tab memory only, so direct browser calls are intended
@@ -47,7 +54,7 @@ export async function fetchClaudeModels({
   try {
     const fetched: ModelOption[] = []
     for await (const model of client.models.list({ lifecycle: ['active'] }, { signal }))
-      fetched.push({ id: model.id, name: model.display_name || model.id })
+      fetched.push({ id: model.id, name: model.display_name || model.id, supportsEffort: supportsEffort(model) })
     return mergeRecommendedModels(RECOMMENDED_CLAUDE_MODELS, fetched)
   }
   catch (err) {
@@ -75,6 +82,7 @@ export async function streamClaudeCompletion({
   model,
   systemPrompt,
   userPrompt,
+  effort,
   signal,
 }: CompletionStreamOptions): Promise<ResearchChunkStream> {
   const client = await createClient(apiKey)
@@ -83,6 +91,7 @@ export async function streamClaudeCompletion({
     max_tokens: MAX_OUTPUT_TOKENS,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
+    ...(effort && { output_config: { effort } }),
   }, { signal })
 
   async function* generator(): AsyncGenerator<string, void, unknown> {
