@@ -1,6 +1,5 @@
 import type { Timeline } from '../domain/timeline'
 import {
-  DEFAULT_DOB,
   GRID_FADE_MS,
   LIFESPAN_DEFAULT_YEARS,
   LIFESPAN_MAX_YEARS,
@@ -66,7 +65,7 @@ export interface GeneratedTimeline extends TimelineInput {
 }
 
 export class TimelineState {
-  dob = $state(DEFAULT_DOB)
+  dob = $state('')
   country = $state('')
   lifespan = $state(LIFESPAN_DEFAULT_YEARS)
 
@@ -89,21 +88,12 @@ export class TimelineState {
   private activeController: AbortController | null = null
   private fadeTimer: ReturnType<typeof setTimeout> | null = null
 
-  /** User action: fades the grid out before the new timeline appears */
-  generate(input: TimelineInput): boolean {
-    return this.applyTimeline(input, GRID_FADE_MS)
-  }
-
-  /** Initial load: shows the saved timeline without a fade */
-  restore(input: TimelineInput): boolean {
-    return this.applyTimeline(input, 0)
-  }
-
   get hasGenerated(): boolean {
     return this.rendered !== null
   }
 
-  private applyTimeline({ dob, country, lifespan }: TimelineInput, fadeMs: number): boolean {
+  /** Fades the grid out before the new timeline appears */
+  generate({ dob, country, lifespan }: TimelineInput): boolean {
     const dobDate = parseLocalDate(dob)
     if (!dobDate || dobDate.getTime() > Date.now())
       return false
@@ -151,10 +141,7 @@ export class TimelineState {
       })
     }
 
-    if (fadeMs === 0)
-      apply()
-    else
-      this.fadeTimer = setTimeout(apply, fadeMs)
+    this.fadeTimer = setTimeout(apply, GRID_FADE_MS)
 
     return true
   }

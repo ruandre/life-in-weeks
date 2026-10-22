@@ -9,11 +9,6 @@
   import { timelineState } from './state/timeline.svelte'
 
   onMount(() => {
-    const { dob, country, lifespan } = timelineState
-    if (dob && lifespan) {
-      timelineState.restore({ dob, country, lifespan })
-    }
-
     const cleanupWebMCP = initWebMCP({
       getDob: () => timelineState.committed?.dob ?? '',
       getLifespan: () => timelineState.committed?.lifespan ?? 0,
