@@ -240,3 +240,46 @@ describe('timeline grid week labels', () => {
     expect(week(30).getAttribute('aria-label')).toBe('Age 0, week 30, 2001 (passed)')
   })
 })
+
+describe('selection in the stacked layout', () => {
+  function stubLayout({ isStacked }: { isStacked: boolean }): void {
+    const matchMedia = window.matchMedia
+    vi.spyOn(window, 'matchMedia').mockImplementation(query => ({
+      ...matchMedia(query),
+      matches: isStacked && query === '(max-width: 1024px)',
+    }))
+  }
+
+  function addResearchPanel(): HTMLElement {
+    const panel = document.createElement('aside')
+    panel.id = 'research-panel'
+    panel.scrollIntoView = vi.fn()
+    document.body.append(panel)
+    return panel
+  }
+
+  afterEach(() => {
+    document.getElementById('research-panel')?.remove()
+    vi.restoreAllMocks()
+  })
+
+  it('scrolls the research panel into view when panels stack', async () => {
+    stubLayout({ isStacked: true })
+    const panel = addResearchPanel()
+    renderGrid()
+
+    await fireEvent.click(week(12))
+
+    expect(panel.scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('leaves the page in place when panels sit side by side', async () => {
+    stubLayout({ isStacked: false })
+    const panel = addResearchPanel()
+    renderGrid()
+
+    await fireEvent.click(week(12))
+
+    expect(panel.scrollIntoView).not.toHaveBeenCalled()
+  })
+})

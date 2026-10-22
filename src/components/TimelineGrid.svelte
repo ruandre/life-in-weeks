@@ -1,7 +1,7 @@
 <script lang='ts'>
   import type { Timeline } from '../domain/timeline'
   import { prefersReducedMotion } from 'svelte/motion'
-  import { WEEKS_PER_YEAR } from '../config/constants'
+  import { STACKED_LAYOUT_QUERY, WEEKS_PER_YEAR } from '../config/constants'
   import { findTargetWeek } from '../domain/grid-navigation'
   import { buildGridRows } from '../domain/grid-rows'
   import { getWeekAge, getWeekStartDate } from '../domain/timeline'
@@ -153,7 +153,7 @@
       return
     focusedWeek = weekIndex
     onSelectWeek(weekIndex)
-    if (window.innerWidth <= 1024) {
+    if (window.matchMedia(STACKED_LAYOUT_QUERY).matches) {
       const behavior = prefersReducedMotion.current ? 'auto' : 'smooth'
       document.getElementById('research-panel')?.scrollIntoView({ behavior, block: 'start' })
     }
@@ -165,7 +165,7 @@
       selectWeek(Number(target.dataset.week))
   }
 
-  function handlePointerOver(e: MouseEvent): void {
+  function handleMouseOver(e: MouseEvent): void {
     const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (!target)
       return
@@ -174,11 +174,11 @@
       return
 
     tooltipText = formatTooltipText(weekIndex)
-    updatePointerTooltip(e.clientX, e.clientY)
+    updateMouseTooltip(e.clientX, e.clientY)
     tooltipVisible = true
   }
 
-  function updatePointerTooltip(clientX: number, clientY: number): void {
+  function updateMouseTooltip(clientX: number, clientY: number): void {
     const x = clientX + TOOLTIP_OFFSET
     const y = clientY + TOOLTIP_OFFSET
     const clampedX = clampToViewport(x, ESTIMATED_TOOLTIP_WIDTH, window.innerWidth)
@@ -187,13 +187,13 @@
     tooltipY = clampedY
   }
 
-  function handlePointerMove(e: MouseEvent): void {
+  function handleMouseMove(e: MouseEvent): void {
     if (tooltipVisible) {
-      updatePointerTooltip(e.clientX, e.clientY)
+      updateMouseTooltip(e.clientX, e.clientY)
     }
   }
 
-  function handlePointerOut(e: MouseEvent): void {
+  function handleMouseOut(e: MouseEvent): void {
     const target = (e.target as HTMLElement)?.closest<HTMLElement>('.week')
     if (target) {
       tooltipVisible = false
@@ -274,11 +274,9 @@
       onkeydown={handleKeydown}
       onclick={handleGridClick}
       onpointerenter={warmOnce}
-      onmouseover={handlePointerOver}
-      onmousemove={handlePointerMove}
-      onmouseout={handlePointerOut}
-      onfocus={handleFocusIn}
-      onblur={handleFocusOut}
+      onmouseover={handleMouseOver}
+      onmousemove={handleMouseMove}
+      onmouseout={handleMouseOut}
       onfocusin={handleFocusIn}
       onfocusout={handleFocusOut}
     >
