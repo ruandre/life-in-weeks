@@ -67,45 +67,45 @@
       ? ''
       : `Enter a whole number of years between ${LIFESPAN_MIN_YEARS} and ${LIFESPAN_MAX_YEARS}.`
 
-    if (isDobValid && isCountryValid && isLifespanValid) {
-      return true
-    }
+    return isDobValid && isCountryValid && isLifespanValid
+  }
 
+  function focusFirstInvalidField(): void {
     // Screen readers announce on focus; aria-invalid must be in the DOM first
     flushSync()
-    if (!isDobValid)
+    if (dobError)
       dobInputEl?.focus()
-    else if (!isCountryValid)
+    else if (countryError)
       countryInputEl?.focus()
-    else if (!isLifespanValid)
+    else if (lifespanError)
       lifespanInputEl?.focus()
+  }
 
-    return false
+  function describeOutcome(isValid: boolean): string {
+    if (!isValid) {
+      const errors = [dobErrorMessage, countryErrorMessage, lifespanErrorMessage].filter(Boolean).join(' ')
+      return `Validation failed: ${errors}`
+    }
+    return JSON.stringify({
+      status: 'success',
+      dob,
+      country: country || null,
+      lifespan,
+      message: `Generated life timeline for DOB ${dob}, expected lifespan ${lifespan} years.`,
+    })
   }
 
   function handleSubmit(e: SubmitEvent): void {
     e.preventDefault()
     const isValid = validate()
-
-    if (isValid) {
+    if (isValid)
       onGenerate({ dob, country, lifespan })
-      // WebMCP agent form invocation
-      if (e.agentInvoked && typeof e.respondWith === 'function') {
-        e.respondWith(Promise.resolve(JSON.stringify({
-          status: 'success',
-          dob,
-          country: country || null,
-          lifespan,
-          message: `Generated life timeline for DOB ${dob}, expected lifespan ${lifespan} years.`,
-        })))
-      }
-    }
-    else {
-      if (e.agentInvoked && typeof e.respondWith === 'function') {
-        const errors = [dobErrorMessage, countryErrorMessage, lifespanErrorMessage].filter(Boolean).join(' ')
-        e.respondWith(Promise.resolve(`Validation failed: ${errors}`))
-      }
-    }
+    else
+      focusFirstInvalidField()
+
+    // WebMCP agent form invocation
+    if (e.agentInvoked && typeof e.respondWith === 'function')
+      e.respondWith(Promise.resolve(describeOutcome(isValid)))
   }
 
   function handleDobChange(): void {

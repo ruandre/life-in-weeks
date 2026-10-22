@@ -58,4 +58,15 @@ describe('timeline form', () => {
     expect(document.querySelectorAll('[aria-live]')).toHaveLength(0)
     expect(screen.getByLabelText(/date of birth/i).getAttribute('aria-describedby')).toBe('dob-error')
   })
+
+  it('keeps focus in the field being corrected while another stays invalid', async () => {
+    renderForm({ dob: '2999-01-01', country: 'Atlantis' })
+    await submit()
+    const countryInput = screen.getByLabelText(/country/i)
+    countryInput.focus()
+
+    await fireEvent.input(countryInput, { target: { value: 'Japa' } })
+
+    expect(document.activeElement).toBe(countryInput)
+  })
 })
