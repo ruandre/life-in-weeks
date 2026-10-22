@@ -16,16 +16,10 @@
     --space-6: 24px;
     --space-8: 32px;
     --space-12: 48px;
-    --space-16: 64px;
-    --space-24: 96px;
-    --week-size: clamp(8px, 1.2vw, 14px);
-    --gap-size: clamp(2px, 0.4vw, 4px);
     --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-    --z-sticky: 100;
     --z-overlay: 200;
-    --z-modal: 300;
     --z-toast: 400;
     color-scheme: dark light;
     accent-color: var(--accent);
