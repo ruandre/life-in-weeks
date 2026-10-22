@@ -10,6 +10,8 @@ vi.mock('../services/cloud-provider-registry', () => ({
       id: 'gemini',
       name: 'Gemini',
       defaultModel: 'gemini-default',
+      recommendedModels: [],
+      offersEffort: false,
       fetchModels: vi.fn(),
       streamCompletion: vi.fn(),
     },
@@ -17,6 +19,8 @@ vi.mock('../services/cloud-provider-registry', () => ({
       id: 'claude',
       name: 'Claude',
       defaultModel: 'claude-default',
+      recommendedModels: [{ id: 'claude-default', name: 'Default', supportsEffort: true }],
+      offersEffort: true,
       fetchModels: vi.fn(),
       streamCompletion: vi.fn(),
     },
@@ -478,5 +482,71 @@ describe('hasCredentials', () => {
     state.setApiKey('key')
 
     expect(state.hasCredentials).toBe(true)
+  })
+})
+
+describe('effort', () => {
+  const fetchClaudeModels = vi.mocked(CLOUD_PROVIDERS.claude.fetchModels)
+
+  async function claudeState(models: ModelOption[]): Promise<SettingsState> {
+    fetchClaudeModels.mockResolvedValueOnce(models)
+    const state = new SettingsState()
+    state.setCloudProvider('claude')
+    state.setPanelOpen(true)
+    state.setApiKey('key')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+    return state
+  }
+
+  it('defaults to low', () => {
+    expect(new SettingsState().effort).toBe('low')
+  })
+
+  it('requests low effort from a Claude model that accepts it', async () => {
+    const state = await claudeState([{ id: 'claude-default', name: 'Default', supportsEffort: true }])
+
+    expect(state.canChooseEffort).toBe(true)
+    expect(state.requestEffort).toBe('low')
+  })
+
+  it('requests the effort the user picks', async () => {
+    const state = await claudeState([{ id: 'claude-default', name: 'Default', supportsEffort: true }])
+
+    state.setEffort('high')
+
+    expect(state.requestEffort).toBe('high')
+  })
+
+  it('leaves effort to a Claude model that does not accept it', async () => {
+    const state = await claudeState([{ id: 'claude-old', name: 'Old', supportsEffort: false }])
+
+    expect(state.model).toBe('claude-old')
+    expect(state.canChooseEffort).toBe(false)
+    expect(state.requestEffort).toBeNull()
+  })
+
+  it('requests low effort for the default model before the model list loads', () => {
+    const state = new SettingsState()
+    state.setCloudProvider('claude')
+
+    state.setApiKey('key')
+
+    expect(state.requestEffort).toBe('low')
+  })
+
+  it('never requests effort from Gemini', async () => {
+    const state = await verifiedState([{ ...defaultModel, supportsEffort: true }])
+
+    expect(state.canChooseEffort).toBe(false)
+    expect(state.requestEffort).toBeNull()
+  })
+
+  it('keeps the chosen effort when the panel closes', async () => {
+    const state = await claudeState([{ id: 'claude-default', name: 'Default', supportsEffort: true }])
+    state.setEffort('medium')
+
+    state.setPanelOpen(false)
+
+    expect(state.effort).toBe('medium')
   })
 })

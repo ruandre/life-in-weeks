@@ -1,5 +1,6 @@
 import type { CloudProvider } from '../services/cloud-provider'
-import type { CloudProviderId, KeyStatus, ModelOption, ResearchProvider } from '../types'
+import type { CloudProviderId, KeyStatus, ModelOption, ResearchEffort, ResearchProvider } from '../types'
+import { DEFAULT_RESEARCH_EFFORT } from '../domain/research-effort'
 import { getErrorMessage, isAbortError } from '../lib/errors'
 import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
 import { warmUpLocalModel } from '../services/research-service'
@@ -14,6 +15,9 @@ export class SettingsState {
   apiKey = $state('')
   // eslint-disable-next-line security/detect-object-injection -- constant CloudProviderId key
   model = $state(CLOUD_PROVIDERS[DEFAULT_CLOUD_PROVIDER].defaultModel)
+
+  // A preference, not a credential: survives provider switches and panel close
+  effort = $state<ResearchEffort>(DEFAULT_RESEARCH_EFFORT)
 
   models = $state.raw<ModelOption[]>([])
   keyStatus = $state<KeyStatus>('empty')
@@ -39,6 +43,20 @@ export class SettingsState {
 
   get canPickModel(): boolean {
     return this.keyStatus === 'valid' && this.models.length > 0
+  }
+
+  // Recommended entries cover the default model before the list loads
+  private get selectedModel(): ModelOption | undefined {
+    return [...this.models, ...this.cloudProvider.recommendedModels].find(option => option.id === this.model)
+  }
+
+  get canChooseEffort(): boolean {
+    return this.cloudProvider.offersEffort && this.selectedModel?.supportsEffort === true
+  }
+
+  /** Effort to send with research; null leaves the model's default */
+  get requestEffort(): ResearchEffort | null {
+    return this.canChooseEffort ? this.effort : null
   }
 
   setPanelOpen(isOpen: boolean): void {
@@ -68,6 +86,10 @@ export class SettingsState {
 
   setModel(value: string): void {
     this.model = value
+  }
+
+  setEffort(value: ResearchEffort): void {
+    this.effort = value
   }
 
   private clearCredentials(): void {

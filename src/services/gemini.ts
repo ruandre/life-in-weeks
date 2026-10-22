@@ -163,6 +163,8 @@ export const geminiProvider: CloudProvider = {
   id: 'gemini',
   name: 'Gemini',
   defaultModel: DEFAULT_GEMINI_MODEL,
+  recommendedModels: RECOMMENDED_MODELS,
+  offersEffort: false,
   keyPlaceholder: 'AIzaSy…',
   keyConsoleUrl: 'https://aistudio.google.com/apikey',
   keyConsoleName: 'Google AI Studio',

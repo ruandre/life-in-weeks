@@ -6,6 +6,7 @@ import ProviderSettings from './ProviderSettings.svelte'
 
 afterEach(() => {
   settingsState.setCloudProvider('gemini')
+  settingsState.setEffort('low')
   settingsState.keyStatus = 'empty'
   settingsState.models = []
 })
@@ -64,5 +65,48 @@ describe('key status', () => {
     render(ProviderSettings)
 
     expect(screen.getByRole('status').textContent?.trim()).toBe('2 models available')
+  })
+})
+
+describe('effort', () => {
+  function effortGroup(): HTMLElement {
+    return screen.getByRole('group', { name: /effort/i })
+  }
+
+  it('offers Low, Medium and High for Claude with Low chosen', () => {
+    settingsState.setCloudProvider('claude')
+    render(ProviderSettings)
+
+    const radios = screen.getAllByRole<HTMLInputElement>('radio', { name: /^(low|medium|high)$/i })
+
+    expect(radios.map(radio => radio.labels?.[0]?.textContent?.trim())).toEqual(['Low', 'Medium', 'High'])
+    expect(screen.getByRole<HTMLInputElement>('radio', { name: 'Low' }).checked).toBe(true)
+    expect(effortGroup()).toHaveProperty('disabled', false)
+  })
+
+  it('records the effort the user picks', async () => {
+    settingsState.setCloudProvider('claude')
+    render(ProviderSettings)
+
+    await fireEvent.click(screen.getByRole('radio', { name: 'High' }))
+
+    expect(settingsState.effort).toBe('high')
+  })
+
+  it('disables effort for a model that does not accept it', () => {
+    settingsState.setCloudProvider('claude')
+    settingsState.keyStatus = 'valid'
+    settingsState.models = [{ id: 'claude-old', name: 'Old', supportsEffort: false }]
+    settingsState.setModel('claude-old')
+    render(ProviderSettings)
+
+    expect(effortGroup()).toHaveProperty('disabled', true)
+    expect(screen.getByText(/does not take an effort level/i)).toBeTruthy()
+  })
+
+  it('has no effort setting for Gemini', () => {
+    render(ProviderSettings)
+
+    expect(screen.queryByRole('group', { name: /effort/i })).toBeNull()
   })
 })

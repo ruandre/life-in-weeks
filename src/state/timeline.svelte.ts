@@ -1,7 +1,7 @@
 import type { Timeline } from '../domain/timeline'
 import type { CloudProvider } from '../services/cloud-provider'
 import type { LocalModelFailure } from '../services/research-service'
-import type { ResearchProvider } from '../types'
+import type { ResearchEffort, ResearchProvider } from '../types'
 import { GRID_FADE_MS, LIFESPAN_DEFAULT_YEARS } from '../config/constants'
 import { renderMarkdown } from '../domain/markdown'
 import { calculateTimeline, getWeekAge, getWeekStartDate } from '../domain/timeline'
@@ -79,6 +79,7 @@ export interface ResearchSettings {
   readonly hasCredentials: boolean
   readonly apiKey: string
   readonly model: string
+  readonly requestEffort: ResearchEffort | null
   readonly cloudProvider: Pick<CloudProvider, 'name'>
 }
 
@@ -200,7 +201,7 @@ export class TimelineState {
       statusMessage: 'Researching that week…',
     }
 
-    const { provider, hasCredentials, apiKey, model, cloudProvider } = this.settings
+    const { provider, hasCredentials, apiKey, model, requestEffort, cloudProvider } = this.settings
     if (provider === 'local' && !isLocalModelSupported())
       return this.showFailure('unsupported', 'This browser has no built-in AI model.')
     if (provider !== 'local' && !hasCredentials)
@@ -213,6 +214,7 @@ export class TimelineState {
         country,
         provider,
         credentials: { apiKey, model },
+        effort: requestEffort,
         signal: controller.signal,
         onDownloadProgress: (loaded) => {
           if (!isCurrent())

@@ -16,7 +16,7 @@ Selecting a week streams a markdown card generated on-device or via the Google G
 - Session handling:
   - On-device: one base session holds the system prompt, and each week's request runs on a `clone()` destroyed when the stream ends
   - Gemini API: streaming completion via `ai.models.generateContentStream()` directly from the browser using CORS
-  - Claude API: streaming completion via `client.messages.stream()` directly from the browser using CORS; default model `claude-sonnet-5-5`, requires a funded account (no free tier)
+  - Claude API: streaming completion via `client.messages.stream()` directly from the browser using CORS; default model `claude-sonnet-5-5`, `output_config.effort` low by default (user can pick medium or high) on models whose capabilities allow it, requires a funded account (no free tier)
 - Host: static site on GitHub Pages
 
 ## WebMCP tools

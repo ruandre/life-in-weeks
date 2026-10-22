@@ -31,6 +31,7 @@ function fakeSettings(overrides: Partial<ResearchSettings> = {}): ResearchSettin
     hasCredentials: false,
     apiKey: '',
     model: '',
+    requestEffort: null,
     cloudProvider: { name: 'Gemini' },
     ...overrides,
   }
@@ -198,6 +199,14 @@ describe('selectWeek outcomes', () => {
       provider: 'claude',
       credentials: { apiKey: 'key', model: 'claude-test' },
     }))
+  })
+
+  it('researches with the effort the settings request', async () => {
+    const state = generatedState(fakeSettings({ provider: 'claude', hasCredentials: true, apiKey: 'key', model: 'claude-test', requestEffort: 'low' }))
+
+    await state.selectWeek(1)
+
+    expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({ effort: 'low' }))
   })
 
   it('renders streamed markdown and marks research ready', async () => {

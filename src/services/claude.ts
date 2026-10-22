@@ -115,6 +115,8 @@ export const claudeProvider: CloudProvider = {
   id: 'claude',
   name: 'Claude',
   defaultModel: DEFAULT_CLAUDE_MODEL,
+  recommendedModels: RECOMMENDED_CLAUDE_MODELS,
+  offersEffort: true,
   keyPlaceholder: 'sk-ant-…',
   keyConsoleUrl: 'https://platform.claude.com/settings/keys',
   keyConsoleName: 'Claude Console',

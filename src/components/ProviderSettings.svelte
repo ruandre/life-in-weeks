@@ -1,10 +1,18 @@
 <script lang='ts'>
+  import type { ResearchEffort } from '../types'
   import ExternalLink from '@lucide/svelte/icons/external-link'
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal'
+  import { isResearchEffort, RESEARCH_EFFORTS } from '../domain/research-effort'
   import { CLOUD_PROVIDERS, isCloudProviderId } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
 
   const cloudProviders = Object.values(CLOUD_PROVIDERS)
+
+  const EFFORT_LABELS: Record<ResearchEffort, string> = {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+  }
 
   const statusText = $derived.by(() => {
     switch (settingsState.keyStatus) {
@@ -30,6 +38,12 @@
 
   function handleModelChange(event: Event & { currentTarget: HTMLSelectElement }): void {
     settingsState.setModel(event.currentTarget.value)
+  }
+
+  function handleEffortChange(event: Event & { currentTarget: HTMLInputElement }): void {
+    const { value } = event.currentTarget
+    if (isResearchEffort(value))
+      settingsState.setEffort(value)
   }
 
   function handleProviderChange(event: Event & { currentTarget: HTMLInputElement }): void {
@@ -117,6 +131,34 @@
         </select>
       </div>
     </div>
+
+    {#if cloud.offersEffort}
+      <fieldset class='field' disabled={!settingsState.canChooseEffort} aria-describedby='effort-hint'>
+        <legend>Effort</legend>
+        <div class='radio-row'>
+          {#each RESEARCH_EFFORTS as level (level)}
+            <label class='radio'>
+              <input
+                type='radio'
+                name='effort'
+                value={level}
+                checked={settingsState.effort === level}
+                onchange={handleEffortChange}
+              />
+              <!-- eslint-disable-next-line security/detect-object-injection -- level comes from the ResearchEffort list -->
+              {EFFORT_LABELS[level]}
+            </label>
+          {/each}
+        </div>
+        <p class='hint' id='effort-hint'>
+          {#if settingsState.canChooseEffort}
+            Low answers fastest and costs least. Medium and High think longer.
+          {:else}
+            This model does not take an effort level.
+          {/if}
+        </p>
+      </fieldset>
+    {/if}
   </div>
 </details>
 
@@ -197,6 +239,11 @@
   .radio input {
     margin: 0;
     accent-color: var(--accent);
+  }
+
+  fieldset:disabled .radio {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   input[type='password'],

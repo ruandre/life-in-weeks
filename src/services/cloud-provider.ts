@@ -24,6 +24,10 @@ export interface CloudProvider {
   id: CloudProviderId
   name: string
   defaultModel: string
+  /** Listed first and known before the model list loads */
+  recommendedModels: ModelOption[]
+  /** Whether research can set an effort level */
+  offersEffort: boolean
   keyPlaceholder: string
   keyConsoleUrl: string
   keyConsoleName: string

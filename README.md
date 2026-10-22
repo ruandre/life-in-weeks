@@ -21,7 +21,7 @@ The grid itself works in any browser. Only the research card needs the model.
 Open **Model** in the Time Capsule panel, pick a provider, and paste a key. The key is verified against that provider's API; once accepted, the model dropdown lists available models.
 
 - **Gemini**: get a key at [Google AI Studio](https://aistudio.google.com/apikey). Free keys are available. Defaults to `gemini-3.6-flash`.
-- **Claude**: get a key at the [Claude Console](https://platform.claude.com/settings/keys). There is no free tier: the account needs prepaid credits, and the key check passes even with a zero balance, so research fails with a billing error until credits are added. Each week costs a few cents on the default `claude-sonnet-5-5`.
+- **Claude**: get a key at the [Claude Console](https://platform.claude.com/settings/keys). There is no free tier: the account needs prepaid credits, and the key check passes even with a zero balance, so research fails with a billing error until credits are added. Each week costs a few cents on the default `claude-sonnet-5-5`. Research runs at low effort by default; pick Medium or High under **Effort** for more depth at more cost and time. Models that do not take an effort level run at their own default.
 
 The key is held in memory for that tab only and is never written to storage. Closing the panel or reloading clears the key, resets the model selection, and goes back to the on-device model. Requests go straight from the page to `https://generativelanguage.googleapis.com` or `https://api.anthropic.com`, so while a key is set the week's dates and your age, which together reveal your date of birth, and your country leave the browser.
 
