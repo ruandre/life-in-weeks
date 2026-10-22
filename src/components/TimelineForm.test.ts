@@ -47,4 +47,15 @@ describe('timeline form', () => {
     expect(document.activeElement).toBe(dobInput)
     expect(invalidOnFocus).toBe('true')
   })
+
+  // Focus already reads the message through aria-describedby; a live region would repeat it
+  it('announces errors once, through the focused field', async () => {
+    renderForm({ dob: '2999-01-01', lifespan: 0 })
+
+    await submit()
+
+    expect(screen.queryAllByRole('alert')).toEqual([])
+    expect(document.querySelectorAll('[aria-live]')).toHaveLength(0)
+    expect(screen.getByLabelText(/date of birth/i).getAttribute('aria-describedby')).toBe('dob-error')
+  })
 })

@@ -158,8 +158,6 @@
     <div
       class={['error-message', dobErrorMessage && 'visible']}
       id='dob-error'
-      role='alert'
-      aria-live='assertive'
     >
       {dobErrorMessage}
     </div>
@@ -194,8 +192,6 @@
     <div
       class={['error-message', countryErrorMessage && 'visible']}
       id='country-error'
-      role='alert'
-      aria-live='assertive'
     >
       {countryErrorMessage}
     </div>
@@ -224,8 +220,6 @@
     <div
       class={['error-message', lifespanErrorMessage && 'visible']}
       id='lifespan-error'
-      role='alert'
-      aria-live='assertive'
     >
       {lifespanErrorMessage}
     </div>
