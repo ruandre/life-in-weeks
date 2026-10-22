@@ -1,8 +1,8 @@
+import type { ResearchSettings } from './timeline.svelte'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GRID_FADE_MS } from '../config/constants'
 import { LocalModelError } from '../services/local-model'
 import { createResearchStream, isLocalModelSupported } from '../services/research-service'
-import { settingsState } from './settings.svelte'
 import { TimelineState } from './timeline.svelte'
 
 vi.mock('../services/research-service', async () => ({
@@ -23,11 +23,21 @@ afterEach(() => {
   vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.clearAllMocks()
-  settingsState.isPanelOpen = false
 })
 
-function generatedState(): TimelineState {
-  const state = new TimelineState()
+function fakeSettings(overrides: Partial<ResearchSettings> = {}): ResearchSettings {
+  return {
+    provider: 'local',
+    hasCredentials: false,
+    apiKey: '',
+    model: '',
+    cloudProvider: { name: 'Gemini' },
+    ...overrides,
+  }
+}
+
+function generatedState(settings = fakeSettings()): TimelineState {
+  const state = new TimelineState(settings)
   state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
   vi.advanceTimersByTime(GRID_FADE_MS)
   return state
@@ -35,7 +45,7 @@ function generatedState(): TimelineState {
 
 describe('initial state', () => {
   it('starts blank until the user generates a timeline', () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
 
     expect(state.dob).toBe('')
     expect(state.committed).toBeNull()
@@ -45,7 +55,7 @@ describe('initial state', () => {
 
 describe('generate', () => {
   it('clears research for the previous inputs', async () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
     await state.selectWeek(10)
 
@@ -56,7 +66,7 @@ describe('generate', () => {
   })
 
   it('cancels research still running for the previous inputs', async () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
     void state.selectWeek(10)
     const { signal } = vi.mocked(createResearchStream).mock.calls[0][0]
@@ -67,7 +77,7 @@ describe('generate', () => {
   })
 
   it('keeps research when regenerating unchanged inputs', async () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
     await state.selectWeek(10)
 
@@ -80,7 +90,7 @@ describe('generate', () => {
 
 describe('generate fade', () => {
   it('drops a pending fade when regenerated immediately', () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
 
     state.generate({ dob: '1980-06-15', country: '', lifespan: 40 })
@@ -91,7 +101,7 @@ describe('generate fade', () => {
   })
 
   it('applies only the latest of overlapping fades', () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
     vi.advanceTimersByTime(GRID_FADE_MS / 3)
 
@@ -107,7 +117,7 @@ describe('generate fade', () => {
   })
 
   it('keeps a pending fade when a rejected generate follows', () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: '', lifespan: 70 })
 
     expect(state.generate({ dob: '2999-01-01', country: '', lifespan: 70 })).toBe(false)
@@ -150,7 +160,7 @@ describe('generate fade', () => {
 
 describe('selectWeek', () => {
   it('researches with the country submitted on generate, not the draft', async () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
     state.generate({ dob: '2000-01-01', country: 'France', lifespan: 70 })
     state.country = 'Fr'
 
@@ -169,7 +179,7 @@ describe('selectWeek', () => {
   })
 
   it('refuses research before a timeline is generated', async () => {
-    const state = new TimelineState()
+    const state = new TimelineState(fakeSettings())
 
     await state.selectWeek(1)
 
@@ -179,6 +189,17 @@ describe('selectWeek', () => {
 })
 
 describe('selectWeek outcomes', () => {
+  it('researches through the chosen cloud provider with its credentials', async () => {
+    const state = generatedState(fakeSettings({ provider: 'claude', hasCredentials: true, apiKey: 'key', model: 'claude-test' }))
+
+    await state.selectWeek(1)
+
+    expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({
+      provider: 'claude',
+      credentials: { apiKey: 'key', model: 'claude-test' },
+    }))
+  })
+
   it('renders streamed markdown and marks research ready', async () => {
     const state = generatedState()
 
@@ -216,8 +237,7 @@ describe('selectWeek outcomes', () => {
   })
 
   it('asks for credentials when Gemini is chosen without a key', async () => {
-    settingsState.isPanelOpen = true
-    const state = generatedState()
+    const state = generatedState(fakeSettings({ provider: 'gemini' }))
 
     const result = await state.selectWeek(1)
 

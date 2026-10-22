@@ -1,5 +1,7 @@
 import type { Timeline } from '../domain/timeline'
+import type { CloudProvider } from '../services/cloud-provider'
 import type { LocalModelFailure } from '../services/research-service'
+import type { ResearchProvider } from '../types'
 import { GRID_FADE_MS, LIFESPAN_DEFAULT_YEARS } from '../config/constants'
 import { renderMarkdown } from '../domain/markdown'
 import { calculateTimeline, getWeekAge, getWeekStartDate } from '../domain/timeline'
@@ -71,6 +73,15 @@ export interface GeneratedTimeline extends TimelineInput {
   timeline: Timeline
 }
 
+/** Provider choice and credentials research runs with */
+export interface ResearchSettings {
+  readonly provider: ResearchProvider
+  readonly hasCredentials: boolean
+  readonly apiKey: string
+  readonly model: string
+  readonly cloudProvider: Pick<CloudProvider, 'name'>
+}
+
 export class TimelineState {
   dob = $state('')
   country = $state('')
@@ -94,6 +105,8 @@ export class TimelineState {
 
   private activeController: AbortController | null = null
   private fadeTimer: ReturnType<typeof setTimeout> | null = null
+
+  constructor(private readonly settings: ResearchSettings) {}
 
   get hasGenerated(): boolean {
     return this.rendered !== null
@@ -187,11 +200,11 @@ export class TimelineState {
       statusMessage: 'Researching that week…',
     }
 
-    const { provider } = settingsState
+    const { provider, hasCredentials, apiKey, model, cloudProvider } = this.settings
     if (provider === 'local' && !isLocalModelSupported())
       return this.showFailure('unsupported', 'This browser has no built-in AI model.')
-    if (provider !== 'local' && !settingsState.hasCredentials)
-      return this.showFailure('error', `Add a ${settingsState.cloudProvider.name} API key and pick a model to research this week.`)
+    if (provider !== 'local' && !hasCredentials)
+      return this.showFailure('error', `Add a ${cloudProvider.name} API key and pick a model to research this week.`)
 
     try {
       const stream = await createResearchStream({
@@ -199,7 +212,7 @@ export class TimelineState {
         dobDate,
         country,
         provider,
-        credentials: { apiKey: settingsState.apiKey, model: settingsState.model },
+        credentials: { apiKey, model },
         signal: controller.signal,
         onDownloadProgress: (loaded) => {
           if (!isCurrent())
@@ -248,9 +261,9 @@ export class TimelineState {
   }
 
   warmUp(): void {
-    if (settingsState.provider === 'local')
+    if (this.settings.provider === 'local')
       warmUpLocalModel()
   }
 }
 
-export const timelineState = new TimelineState()
+export const timelineState = new TimelineState(settingsState)
