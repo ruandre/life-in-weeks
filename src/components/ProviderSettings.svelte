@@ -1,7 +1,6 @@
 <script lang='ts'>
   import type { ResearchEffort } from '../types'
   import ExternalLink from '@lucide/svelte/icons/external-link'
-  import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal'
   import { isResearchEffort, RESEARCH_EFFORTS } from '../domain/research-effort'
   import { CLOUD_PROVIDERS, isCloudProviderId } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
@@ -28,10 +27,6 @@
 
   const cloud = $derived(settingsState.cloudProvider)
 
-  function handleToggle(event: Event & { currentTarget: HTMLDetailsElement }): void {
-    settingsState.setPanelOpen(event.currentTarget.open)
-  }
-
   function handleKeyInput(event: Event & { currentTarget: HTMLInputElement }): void {
     settingsState.setApiKey(event.currentTarget.value)
   }
@@ -53,150 +48,104 @@
   }
 </script>
 
-<details class='provider' ontoggle={handleToggle}>
-  <summary>
-    <span class='summary-label'>
-      <SlidersHorizontal size={13} aria-hidden='true' />
-      <span>Model</span>
-    </span>
-    <span class='provider-badge'>
-      {settingsState.provider === 'local' ? 'On device' : `${cloud.name} API`}
-    </span>
-  </summary>
+<div>
+  <fieldset class='field'>
+    <legend>Provider</legend>
+    <div class='radio-row'>
+      {#each cloudProviders as option (option.id)}
+        <label class='radio'>
+          <input
+            type='radio'
+            name='cloud-provider'
+            value={option.id}
+            checked={settingsState.cloudProviderId === option.id}
+            onchange={handleProviderChange}
+          />
+          {option.name}
+        </label>
+      {/each}
+    </div>
+  </fieldset>
 
-  <div class='provider-body'>
-    <fieldset class='field'>
-      <legend>Provider</legend>
+  <div class='field'>
+    <label for='cloud-key'>{cloud.name} API key</label>
+    <input
+      type='password'
+      id='cloud-key'
+      name='cloud-key'
+      value={settingsState.apiKey}
+      placeholder={cloud.keyPlaceholder}
+      autocomplete='off'
+      spellcheck='false'
+      aria-describedby='cloud-key-hint'
+      aria-invalid={settingsState.keyStatus === 'invalid' ? 'true' : undefined}
+      oninput={handleKeyInput}
+    />
+    {#if statusText}
+      <p
+        class={['hint', settingsState.keyStatus === 'invalid' && 'hint-error']}
+        role='status'
+        aria-live='polite'
+      >
+        {statusText}
+      </p>
+    {/if}
+    <p class='hint' id='cloud-key-hint'>
+      Get an API key at <a href={cloud.keyConsoleUrl} target='_blank' rel='noopener noreferrer' class='inline-link'>{cloud.keyConsoleName} <ExternalLink size={11} aria-hidden='true' /></a>. {cloud.billingNote} Paste it to run research through {cloud.name} instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.
+    </p>
+  </div>
+
+  <div class='field'>
+    <label for='cloud-model'>{cloud.name} model</label>
+    <div class='select-shell'>
+      <select
+        id='cloud-model'
+        name='cloud-model'
+        value={selectedModel}
+        disabled={!settingsState.canPickModel}
+        onchange={handleModelChange}
+      >
+        {#if settingsState.canPickModel}
+          {#each settingsState.models as model (model.id)}
+            <option value={model.id}>{model.name}</option>
+          {/each}
+        {:else}
+          <option value=''>Paste a key to load models</option>
+        {/if}
+      </select>
+    </div>
+  </div>
+
+  {#if cloud.offersEffort}
+    <fieldset class='field' disabled={!settingsState.canChooseEffort} aria-describedby='effort-hint'>
+      <legend>Effort</legend>
       <div class='radio-row'>
-        {#each cloudProviders as option (option.id)}
+        {#each RESEARCH_EFFORTS as level (level)}
           <label class='radio'>
             <input
               type='radio'
-              name='cloud-provider'
-              value={option.id}
-              checked={settingsState.cloudProviderId === option.id}
-              onchange={handleProviderChange}
+              name='effort'
+              value={level}
+              checked={settingsState.effort === level}
+              onchange={handleEffortChange}
             />
-            {option.name}
+            <!-- eslint-disable-next-line security/detect-object-injection -- level comes from the ResearchEffort list -->
+            {EFFORT_LABELS[level]}
           </label>
         {/each}
       </div>
-    </fieldset>
-
-    <div class='field'>
-      <label for='cloud-key'>{cloud.name} API key</label>
-      <input
-        type='password'
-        id='cloud-key'
-        name='cloud-key'
-        value={settingsState.apiKey}
-        placeholder={cloud.keyPlaceholder}
-        autocomplete='off'
-        spellcheck='false'
-        aria-describedby='cloud-key-hint'
-        aria-invalid={settingsState.keyStatus === 'invalid' ? 'true' : undefined}
-        oninput={handleKeyInput}
-      />
-      {#if statusText}
-        <p
-          class={['hint', settingsState.keyStatus === 'invalid' && 'hint-error']}
-          role='status'
-          aria-live='polite'
-        >
-          {statusText}
-        </p>
-      {/if}
-      <p class='hint' id='cloud-key-hint'>
-        Get an API key at <a href={cloud.keyConsoleUrl} target='_blank' rel='noopener noreferrer' class='inline-link'>{cloud.keyConsoleName} <ExternalLink size={11} aria-hidden='true' /></a>. {cloud.billingNote} Paste it to run research through {cloud.name} instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.
+      <p class='hint' id='effort-hint'>
+        {#if settingsState.canChooseEffort}
+          Low answers fastest and costs least. Medium and High think longer.
+        {:else}
+          This model does not take an effort level.
+        {/if}
       </p>
-    </div>
-
-    <div class='field'>
-      <label for='cloud-model'>{cloud.name} model</label>
-      <div class='select-shell'>
-        <select
-          id='cloud-model'
-          name='cloud-model'
-          value={selectedModel}
-          disabled={!settingsState.canPickModel}
-          onchange={handleModelChange}
-        >
-          {#if settingsState.canPickModel}
-            {#each settingsState.models as model (model.id)}
-              <option value={model.id}>{model.name}</option>
-            {/each}
-          {:else}
-            <option value=''>Paste a key to load models</option>
-          {/if}
-        </select>
-      </div>
-    </div>
-
-    {#if cloud.offersEffort}
-      <fieldset class='field' disabled={!settingsState.canChooseEffort} aria-describedby='effort-hint'>
-        <legend>Effort</legend>
-        <div class='radio-row'>
-          {#each RESEARCH_EFFORTS as level (level)}
-            <label class='radio'>
-              <input
-                type='radio'
-                name='effort'
-                value={level}
-                checked={settingsState.effort === level}
-                onchange={handleEffortChange}
-              />
-              <!-- eslint-disable-next-line security/detect-object-injection -- level comes from the ResearchEffort list -->
-              {EFFORT_LABELS[level]}
-            </label>
-          {/each}
-        </div>
-        <p class='hint' id='effort-hint'>
-          {#if settingsState.canChooseEffort}
-            Low answers fastest and costs least. Medium and High think longer.
-          {:else}
-            This model does not take an effort level.
-          {/if}
-        </p>
-      </fieldset>
-    {/if}
-  </div>
-</details>
+    </fieldset>
+  {/if}
+</div>
 
 <style>
-  .provider {
-    margin-top: var(--space-3);
-    border: 1px solid var(--border);
-  }
-
-  summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    cursor: pointer;
-    color: var(--grey);
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    transition: color 0.2s var(--ease-out-quint);
-  }
-
-  summary:hover,
-  summary:focus-visible {
-    color: var(--fg);
-  }
-
-  .provider-badge {
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  .provider-body {
-    padding: 0 var(--space-3) var(--space-3);
-  }
-
   .field + .field {
     margin-top: var(--space-4);
   }
@@ -333,16 +282,6 @@
   .hint a:hover,
   .hint a:focus-visible {
     color: var(--accent);
-  }
-
-  .summary-label {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
-  .summary-label :global(svg) {
-    flex-shrink: 0;
   }
 
   .inline-link {

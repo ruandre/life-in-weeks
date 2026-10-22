@@ -18,7 +18,7 @@ test('researches through Gemini with a pasted key and discloses what is sent', a
   })
   await generateTimeline(page, { dob: '1990-05-15' })
 
-  await page.getByText('Model', { exact: true }).click()
+  await page.getByRole('button', { name: /^model/i }).click()
   await page.getByLabel(/gemini api key/i).fill('test-key')
   await expect(page.getByRole('status')).toHaveText('3 models available')
   await expect(page.getByText(/reveal your date of birth/i)).toBeVisible()
@@ -69,7 +69,7 @@ test('researches through Claude at low effort unless the user raises it', async 
     await route.fulfill({ contentType: 'text/event-stream', body: claudeEventStream('## That week in history\n- From Claude') })
   })
   await generateTimeline(page, { dob: '1990-05-15' })
-  await page.getByText('Model', { exact: true }).click()
+  await page.getByRole('button', { name: /^model/i }).click()
   await page.getByRole('radio', { name: 'Claude' }).check()
   await page.getByLabel(/claude api key/i).fill('test-key')
   await expect(page.getByRole('status')).toHaveText('3 models available')
@@ -85,4 +85,23 @@ test('researches through Claude at low effort unless the user raises it', async 
   await expect(results).toContainText('From Claude')
 
   expect(efforts).toEqual(['low', 'high'])
+})
+
+test.describe('on a wide screen', () => {
+  test.use({ viewport: { width: 1600, height: 900 } })
+
+  test('opens model settings in their own panel beside the week results', async ({ timelinePage: page }) => {
+    const results = page.getByRole('region', { name: /research results/i })
+    const widthBefore = (await results.boundingBox())?.width
+
+    await page.getByRole('button', { name: /^model/i }).click()
+    const settings = page.getByRole('region', { name: /model settings/i })
+    await expect(settings).toBeVisible()
+
+    const resultsBox = await results.boundingBox()
+    const settingsBox = await settings.boundingBox()
+    expect(settingsBox?.x).toBeGreaterThanOrEqual((resultsBox?.x ?? 0) + (resultsBox?.width ?? 0))
+    expect(settingsBox?.y).toBeLessThan((resultsBox?.y ?? 0) + (resultsBox?.height ?? 0))
+    expect(resultsBox?.width).toBe(widthBefore)
+  })
 })

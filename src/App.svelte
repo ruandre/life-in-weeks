@@ -69,7 +69,8 @@
 
   .layout {
     display: grid;
-    grid-template-columns: minmax(260px, 300px) 1fr minmax(280px, 340px);
+    /* Research panel sizes itself; widens when model settings open */
+    grid-template-columns: minmax(260px, 300px) 1fr auto;
     height: 100dvh;
     overflow: hidden;
   }

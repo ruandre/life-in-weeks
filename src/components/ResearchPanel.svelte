@@ -8,6 +8,7 @@
   import { settingsState } from '../state/settings.svelte'
   import Footer from './Footer.svelte'
   import ProviderSettings from './ProviderSettings.svelte'
+  import ProviderToggle from './ProviderToggle.svelte'
 
   const cloudProviders = Object.values(CLOUD_PROVIDERS)
 
@@ -45,7 +46,7 @@
 {/snippet}
 
 <aside
-  class='research-panel'
+  class={['research-panel', { 'has-settings': settingsState.isPanelOpen }]}
   id='research-panel'
   aria-labelledby='research-heading'
 >
@@ -62,14 +63,24 @@
         plus your country.
       {:else if settingsState.provider !== 'local'}
         Nothing runs until you paste a {settingsState.cloudProvider.name} API
-        key below. Close this panel to go back to the on-device model.
+        key in Model settings. Close them to go back to the on-device model.
       {:else}
         Runs on your device. Nothing leaves the browser, and it gets things
         wrong (tiny model).
       {/if}
     </p>
-    <ProviderSettings />
+    <ProviderToggle controls='provider-settings' />
   </div>
+
+  <section
+    class='settings-panel'
+    id='provider-settings'
+    aria-labelledby='provider-settings-heading'
+    hidden={!settingsState.isPanelOpen}
+  >
+    <h3 id='provider-settings-heading'>Model settings</h3>
+    <ProviderSettings />
+  </section>
 
   <!-- Scrolls on desktop with no focusable children; tabindex lets keyboards scroll it -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -160,8 +171,15 @@
   }
 
   .research-panel {
+    --pad-block-start: var(--space-8);
+    --pad-inline: var(--space-8);
+    --pad-block-end: var(--space-3);
+    --results-width: 340px;
+    --settings-width: 300px;
+
     isolation: isolate;
-    padding: var(--space-8) var(--space-8) var(--space-3);
+    inline-size: var(--results-width);
+    padding: var(--pad-block-start) var(--pad-inline) var(--pad-block-end);
     border-left: 1px solid var(--border);
     height: 100dvh;
     display: flex;
@@ -172,7 +190,35 @@
 
   @media (max-height: 800px) and (min-width: 1025px) {
     .research-panel {
-      padding: var(--space-6) var(--space-6) var(--space-3);
+      --pad-block-start: var(--space-6);
+      --pad-inline: var(--space-6);
+    }
+  }
+
+  .settings-panel {
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Own column only where the timeline keeps room; narrower screens stack it under the header */
+  @media (min-width: 1400px) {
+    .research-panel.has-settings {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) var(--settings-width);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      column-gap: var(--pad-inline);
+      inline-size: calc(var(--results-width) + var(--pad-inline) + var(--settings-width));
+    }
+
+    /* Header, results, footer auto-flow into column 1; negative margins bleed divider to panel edges */
+    .has-settings .settings-panel {
+      grid-column: 2;
+      grid-row: 1 / -1;
+      margin: calc(-1 * var(--pad-block-start)) calc(-1 * var(--pad-inline)) calc(-1 * var(--pad-block-end)) 0;
+      padding: var(--pad-block-start) var(--pad-inline) var(--pad-block-end);
+      border-bottom: 0;
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
     }
   }
 
@@ -198,6 +244,7 @@
     }
 
     .research-panel {
+      inline-size: auto;
       height: auto;
       min-height: 380px;
       max-height: none;
@@ -213,13 +260,18 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .research-header h2 {
+  .research-header h2,
+  .settings-panel h3 {
     font-size: 1.15rem;
     letter-spacing: 0.05em;
     color: var(--fg);
     font-weight: 700;
     text-transform: uppercase;
     text-wrap: balance;
+  }
+
+  .settings-panel h3 {
+    margin-bottom: var(--space-4);
   }
 
   .research-subhead {
@@ -235,7 +287,8 @@
       padding-bottom: var(--space-3);
     }
 
-    .research-header h2 {
+    .research-header h2,
+    .settings-panel h3 {
       font-size: 0.95rem;
     }
 
@@ -246,7 +299,8 @@
   }
 
   @media (max-height: 680px) {
-    .research-header h2 {
+    .research-header h2,
+    .settings-panel h3 {
       font-size: 0.85rem;
     }
 

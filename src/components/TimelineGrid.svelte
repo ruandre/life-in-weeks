@@ -73,6 +73,9 @@
 
   const GAP = 2
 
+  const MOTIF_LIVED_WEEKS = 4
+  const MOTIF_WEEKS = Array.from({ length: 7 }, (_, index) => index + 1)
+
   // Integer size guarantees 1:1 square ratio; eliminates subpixel gap rounding
   const cellSize = $derived.by(() => {
     if (!wrapperWidth || !wrapperHeight || !lifespan)
@@ -252,7 +255,12 @@
       id='empty-state'
       aria-live='polite'
     >
-      Add your date of birth, then generate to see your life in weeks.
+      <p>Add your date of birth, then generate to see your life in weeks.</p>
+      <div class='motif' aria-hidden='true'>
+        {#each MOTIF_WEEKS as week (week)}
+          <span class={['motif-week', week <= MOTIF_LIVED_WEEKS && 'passed']}></span>
+        {/each}
+      </div>
     </div>
   {/if}
 
@@ -501,8 +509,35 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-6);
     color: var(--grey);
     text-align: center;
     pointer-events: none;
+  }
+
+  .motif {
+    display: flex;
+    gap: 6px;
+  }
+
+  .motif-week {
+    inline-size: 14px;
+    block-size: 14px;
+    border: 1px solid var(--control-border);
+  }
+
+  .motif-week.passed {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  @media (forced-colors: active) {
+    .motif-week.passed {
+      background: Highlight;
+      border-color: Highlight;
+    }
   }
 </style>

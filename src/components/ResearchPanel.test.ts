@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { ResearchState } from '../state/timeline.svelte'
-import { render, screen } from '@testing-library/svelte'
+import { fireEvent, render, screen } from '@testing-library/svelte'
 import { afterEach, describe, expect, it } from 'vitest'
 import { settingsState } from '../state/settings.svelte'
 import ResearchPanel from './ResearchPanel.svelte'
@@ -18,6 +18,7 @@ const idleResearch: ResearchState = {
 }
 
 afterEach(() => {
+  settingsState.setPanelOpen(false)
   settingsState.apiKey = ''
 })
 
@@ -33,5 +34,36 @@ describe('privacy note', () => {
     render(ResearchPanel, { research: idleResearch })
 
     expect(screen.getByText(/nothing leaves the browser/i)).toBeTruthy()
+  })
+})
+
+describe('model settings panel', () => {
+  function modelToggle(): HTMLElement {
+    return screen.getByRole('button', { name: /^model/i })
+  }
+
+  it('keeps the settings hidden until the model toggle opens them', async () => {
+    render(ResearchPanel, { research: idleResearch })
+
+    expect(modelToggle().getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('region', { name: /model settings/i })).toBeNull()
+
+    await fireEvent.click(modelToggle())
+
+    expect(modelToggle().getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('region', { name: /model settings/i })).toBeTruthy()
+    expect(settingsState.isPanelOpen).toBe(true)
+  })
+
+  it('clears the key and returns to the on-device model on close', async () => {
+    render(ResearchPanel, { research: idleResearch })
+    await fireEvent.click(modelToggle())
+    settingsState.setApiKey('key')
+
+    await fireEvent.click(modelToggle())
+
+    expect(settingsState.apiKey).toBe('')
+    expect(settingsState.provider).toBe('local')
+    expect(screen.queryByRole('region', { name: /model settings/i })).toBeNull()
   })
 })
