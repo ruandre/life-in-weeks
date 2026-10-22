@@ -1,8 +1,7 @@
 <script lang='ts'>
-  import type { CloudProviderId } from '../types'
   import ExternalLink from '@lucide/svelte/icons/external-link'
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal'
-  import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
+  import { CLOUD_PROVIDERS, isCloudProviderId } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
 
   const cloudProviders = Object.values(CLOUD_PROVIDERS)
@@ -11,7 +10,7 @@
     switch (settingsState.keyStatus) {
       case 'checking': return 'Checking that key\u2026'
       case 'invalid': return settingsState.keyError
-      case 'valid': return `${settingsState.models.length} text models available`
+      case 'valid': return `${settingsState.models.length} models available`
       default: return null
     }
   })
@@ -34,7 +33,9 @@
   }
 
   function handleProviderChange(event: Event & { currentTarget: HTMLInputElement }): void {
-    settingsState.setCloudProvider(event.currentTarget.value as CloudProviderId)
+    const { value } = event.currentTarget
+    if (isCloudProviderId(value))
+      settingsState.setCloudProvider(value)
   }
 </script>
 

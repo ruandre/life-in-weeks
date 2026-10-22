@@ -33,6 +33,7 @@ async function streamFromCloud(
   userPrompt: string,
   signal?: AbortSignal,
 ): Promise<ResearchChunkStream> {
+  // eslint-disable-next-line security/detect-object-injection -- providerId is a CloudProviderId union key
   const provider = CLOUD_PROVIDERS[providerId]
   if (!credentials?.apiKey || !credentials.model)
     throw new Error(`Add a ${provider.name} API key and pick a model first.`)

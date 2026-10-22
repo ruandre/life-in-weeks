@@ -7,3 +7,7 @@ export const CLOUD_PROVIDERS: Record<CloudProviderId, CloudProvider> = {
   gemini: geminiProvider,
   claude: claudeProvider,
 }
+
+export function isCloudProviderId(value: string): value is CloudProviderId {
+  return Object.hasOwn(CLOUD_PROVIDERS, value)
+}

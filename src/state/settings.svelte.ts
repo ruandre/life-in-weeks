@@ -12,6 +12,7 @@ export class SettingsState {
 
   // In-memory only; do not persist credentials
   apiKey = $state('')
+  // eslint-disable-next-line security/detect-object-injection -- constant CloudProviderId key
   model = $state(CLOUD_PROVIDERS[DEFAULT_CLOUD_PROVIDER].defaultModel)
 
   models = $state.raw<ModelOption[]>([])

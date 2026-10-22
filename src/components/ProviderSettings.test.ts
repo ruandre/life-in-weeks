@@ -56,3 +56,13 @@ describe('provider settings model select', () => {
     expect(select.value).toBe('gemini-test')
   })
 })
+
+describe('key status', () => {
+  it('reports how many models the key unlocks', () => {
+    settingsState.keyStatus = 'valid'
+    settingsState.models = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }]
+    render(ProviderSettings)
+
+    expect(screen.getByRole('status').textContent?.trim()).toBe('2 models available')
+  })
+})
