@@ -35,7 +35,7 @@ Selecting a week streams a markdown card generated on-device or via the Google G
 ## Security and privacy
 - No backend server. Everything runs client-side.
 - On-device inference runs locally in Chrome; prompts and answers never leave the device, and there is no telemetry.
-- When using a cloud API, requests travel directly from the client to `https://generativelanguage.googleapis.com` (Gemini) or `https://api.anthropic.com` (Claude). The API key is kept in tab memory only (never written to `localStorage` or cookies) and is cleared on panel close or reload, resetting the model selection.
+- When using a cloud API, requests travel directly from the client to `https://generativelanguage.googleapis.com` (Gemini) or `https://api.anthropic.com` (Claude). The API key is kept in tab memory only (never written to `localStorage` or cookies) and is cleared on panel close or reload, resetting the model selection. Each cloud request carries the selected week's start and end dates and the user's age, which together reveal the date of birth, plus the country if given.
 - Content Security Policy sets object-src to 'none', base-uri to 'self', and restricts connections to 'self', `https://generativelanguage.googleapis.com`, and `https://api.anthropic.com`.
 - Model output is rendered through the app's own markdown renderer, never assigned as raw HTML from the model.
 

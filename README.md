@@ -23,7 +23,7 @@ Open **Model** in the Time Capsule panel, pick a provider, and paste a key. The 
 - **Gemini**: get a key at [Google AI Studio](https://aistudio.google.com/apikey). Free keys are available. Defaults to `gemini-3.6-flash`.
 - **Claude**: get a key at the [Claude Console](https://platform.claude.com/settings/keys). There is no free tier: the account needs prepaid credits, and the key check passes even with a zero balance, so research fails with a billing error until credits are added. Each week costs a few cents on the default `claude-sonnet-5-5`.
 
-The key is held in memory for that tab only and is never written to storage. Closing the panel or reloading clears the key, resets the model selection, and goes back to the on-device model. Requests go straight from the page to `https://generativelanguage.googleapis.com` or `https://api.anthropic.com`, so the week you picked and your country leave the browser while a key is set.
+The key is held in memory for that tab only and is never written to storage. Closing the panel or reloading clears the key, resets the model selection, and goes back to the on-device model. Requests go straight from the page to `https://generativelanguage.googleapis.com` or `https://api.anthropic.com`, so while a key is set the week's dates and your age, which together reveal your date of birth, and your country leave the browser.
 
 ## Development
 
@@ -43,7 +43,7 @@ The page registers WebMCP tools, so a browser agent can drive it: `generate_life
 
 ## Stack
 
-Svelte 5 runes, TypeScript, Vite, plain CSS with cascade layers and container queries. No UI framework, minimal runtime dependencies (`@google/genai`, `@lucide/svelte`, and `@fontsource/open-sans`). Deployed as a static site on GitHub Pages.
+Svelte 5 runes, TypeScript, Vite, plain CSS with cascade layers and container queries. No UI framework, minimal runtime dependencies (`@google/genai`, `@anthropic-ai/sdk`, `@lucide/svelte`, and `@fontsource/open-sans`). Deployed as a static site on GitHub Pages.
 
 ## License
 

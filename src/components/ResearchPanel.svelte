@@ -57,8 +57,9 @@
     <h2 id='research-heading'>Time Capsule</h2>
     <p class='research-subhead'>
       {#if settingsState.provider !== 'local' && settingsState.hasCredentials}
-        Runs through {settingsState.cloudProvider.name} API. The week you pick
-        and your country are sent to the model you chose.
+        Runs through {settingsState.cloudProvider.name} API. The model you chose
+        gets the week's dates and your age, which reveal your date of birth,
+        plus your country.
       {:else if settingsState.provider !== 'local'}
         Nothing runs until you paste a {settingsState.cloudProvider.name} API
         key below. Close this panel to go back to the on-device model.

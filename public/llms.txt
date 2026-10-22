@@ -1,10 +1,10 @@
 # Life in Weeks
 
-> A web app that draws a human lifespan as a grid of weeks, 52 per year, and researches any single week with on-device AI or the Gemini API.
+> A web app that draws a human lifespan as a grid of weeks, 52 per year, and researches any single week with on-device AI or the Gemini or Claude API.
 
 Life in Weeks renders every week of a life on a 52-column grid, one row per year. Selecting a week streams a short card about it: world and country events, pop culture of the period (film, music, TV, games, sport), typical development at that age, and a dad joke. Future weeks return what is already scheduled.
 
-Inference runs locally through Chrome's Prompt API (Gemini Nano) or via Google's Gemini API when the user provides an API key. There is no backend server. When using the on-device model, no request leaves the browser; with a Gemini API key, requests go directly from the client to Google's API. Date of birth, country, and lifespan stay in the browser.
+Inference runs locally through Chrome's Prompt API (Gemini Nano), or through Google's Gemini API or Anthropic's Claude API when the user provides an API key. There is no backend server. When using the on-device model, no request leaves the browser. With an API key, requests go directly from the client to the chosen provider and carry the selected week's dates, the user's age, which together reveal the date of birth, and the country if given. Nothing is stored.
 
 The page also registers WebMCP tools so browser agents can generate a timeline, select a week, and read current statistics.
 
