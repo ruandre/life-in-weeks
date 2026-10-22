@@ -11,6 +11,6 @@ export default defineConfig({
   test: {
     // DST zone exposes fixed-millisecond date arithmetic
     env: { TZ: 'Europe/London' },
-    exclude: [...configDefaults.exclude, '.claude/**'],
+    exclude: [...configDefaults.exclude, '.claude/**', 'e2e/**'],
   },
 })

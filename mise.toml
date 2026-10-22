@@ -63,12 +63,24 @@ description = "Run every linter and formatter check (the pre-commit hook runs th
 run = "hk check --all"
 
 [tasks.typecheck]
-description = "Type-check components and modules with svelte-check"
-run = "aube exec svelte-check --tsconfig ./tsconfig.json"
+description = "Type-check the app with svelte-check, and configs and E2E specs with tsc"
+run = [
+  "aube exec svelte-check --tsconfig ./tsconfig.json",
+  "aube exec tsc -p tsconfig.node.json --noEmit --composite false"
+]
 
 [tasks.test]
 description = "Run unit and property-based tests"
 run = "aube exec vitest run"
+
+[tasks.e2e]
+description = "Run Playwright end-to-end tests against the production build"
+depends = [ "build" ]
+run = "aube exec playwright test"
+
+[tasks."e2e:browsers"]
+description = "Install the Chromium build Playwright pins, with its OS packages (CI; needs root for apt)"
+run = "aube exec playwright install --with-deps chromium"
 
 [tasks.audit]
 description = "Check dependencies for known vulnerabilities"
@@ -113,9 +125,10 @@ depends = [ "og" ]
 run = "aube exec vite build"
 
 [tasks.ci]
-description = "Everything CI runs: check, audit, build"
+description = "Everything CI runs: check, audit, build, e2e"
 depends = [
   "check",
   "audit",
-  "build"
+  "build",
+  "e2e"
 ]

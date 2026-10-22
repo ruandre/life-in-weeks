@@ -34,6 +34,7 @@ mise run setup     # install tools, dependencies and git hooks
 mise run dev       # Vite dev server
 mise run check     # lint, typecheck, test
 mise run build     # static build into dist/ (regenerates the OG image first)
+mise run e2e       # Playwright end-to-end tests against that build (Chromium)
 mise tasks         # list every task
 ```
 

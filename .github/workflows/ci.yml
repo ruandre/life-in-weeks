@@ -39,7 +39,10 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: mise run actions:verify
 
-      - name: Lint, typecheck, test, audit, build
+      - name: Install Playwright Chromium
+        run: mise run e2e:browsers
+
+      - name: Lint, typecheck, test, audit, build, e2e
         run: mise run ci
 
       - name: Add 404 fallback (SPA)
