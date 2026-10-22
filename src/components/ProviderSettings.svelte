@@ -1,18 +1,22 @@
 <script lang='ts'>
   import type { ResearchEffort } from '../types'
   import ExternalLink from '@lucide/svelte/icons/external-link'
-  import { isResearchEffort, RESEARCH_EFFORTS } from '../domain/research-effort'
-  import { CLOUD_PROVIDERS, isCloudProviderId } from '../services/cloud-provider-registry'
+  import { RESEARCH_EFFORTS } from '../domain/research-effort'
+  import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
+  import SegmentedControl from './SegmentedControl.svelte'
   import TruncatedNote from './TruncatedNote.svelte'
 
-  const cloudProviders = Object.values(CLOUD_PROVIDERS)
+  const PROVIDER_OPTIONS = Object.values(CLOUD_PROVIDERS).map(({ id, name }) => ({ value: id, label: name }))
 
   const EFFORT_LABELS: Record<ResearchEffort, string> = {
     low: 'Low',
     medium: 'Medium',
     high: 'High',
   }
+
+  // eslint-disable-next-line security/detect-object-injection -- level comes from the ResearchEffort list
+  const EFFORT_OPTIONS = RESEARCH_EFFORTS.map(level => ({ value: level, label: EFFORT_LABELS[level] }))
 
   const statusText = $derived.by(() => {
     switch (settingsState.keyStatus) {
@@ -37,37 +41,17 @@
   function handleModelChange(event: Event & { currentTarget: HTMLSelectElement }): void {
     settingsState.setModel(event.currentTarget.value)
   }
-
-  function handleEffortChange(event: Event & { currentTarget: HTMLInputElement }): void {
-    const { value } = event.currentTarget
-    if (isResearchEffort(value))
-      settingsState.setEffort(value)
-  }
-
-  function handleProviderChange(event: Event & { currentTarget: HTMLInputElement }): void {
-    const { value } = event.currentTarget
-    if (isCloudProviderId(value))
-      settingsState.setCloudProvider(value)
-  }
 </script>
 
 <div>
   <fieldset class='field'>
     <legend>Provider</legend>
-    <div class='radio-row'>
-      {#each cloudProviders as option (option.id)}
-        <label class='radio'>
-          <input
-            type='radio'
-            name='cloud-provider'
-            value={option.id}
-            checked={settingsState.cloudProviderId === option.id}
-            onchange={handleProviderChange}
-          />
-          {option.name}
-        </label>
-      {/each}
-    </div>
+    <SegmentedControl
+      name='cloud-provider'
+      options={PROVIDER_OPTIONS}
+      value={settingsState.cloudProviderId}
+      onchange={id => settingsState.setCloudProvider(id)}
+    />
   </fieldset>
 
   <div class='field'>
@@ -125,21 +109,12 @@
   {#if cloud.offersEffort}
     <fieldset class='field' disabled={!settingsState.canChooseEffort} aria-describedby='effort-hint'>
       <legend>Effort</legend>
-      <div class='radio-row'>
-        {#each RESEARCH_EFFORTS as level (level)}
-          <label class='radio'>
-            <input
-              type='radio'
-              name='effort'
-              value={level}
-              checked={settingsState.effort === level}
-              onchange={handleEffortChange}
-            />
-            <!-- eslint-disable-next-line security/detect-object-injection -- level comes from the ResearchEffort list -->
-            {EFFORT_LABELS[level]}
-          </label>
-        {/each}
-      </div>
+      <SegmentedControl
+        name='effort'
+        options={EFFORT_OPTIONS}
+        value={settingsState.effort}
+        onchange={level => settingsState.setEffort(level)}
+      />
       <p class='hint' id='effort-hint'>
         {#if settingsState.canChooseEffort}
           Low answers fastest and costs least. Medium and High think longer.
@@ -173,32 +148,6 @@
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-  }
-
-  .radio-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-  }
-
-  .radio {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--fg);
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  .radio input {
-    margin: 0;
-    accent-color: var(--accent);
-  }
-
-  fieldset:disabled .radio {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   input[type='password'],
