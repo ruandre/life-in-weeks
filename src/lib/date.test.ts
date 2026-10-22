@@ -47,41 +47,18 @@ describe('parseLocalDate', () => {
   })
 })
 
-describe('parseLocalDate with Temporal', () => {
+describe('parseLocalDate in browsers with Temporal', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
 
-  function stubTemporal() {
+  // Temporal.PlainDate.from accepts these; parsing must not vary by browser
+  it.each(['2020-01-01T10:00', '20200101', '+002020-01-01'])('still rejects non YYYY-MM-DD input %s', (input) => {
     vi.stubGlobal('Temporal', {
-      PlainDate: {
-        from: (dateStr: string) => {
-          const [year, month, day] = dateStr.split('-').map(Number)
-          return { year, month, day }
-        },
-      },
+      PlainDate: { from: () => ({ year: 2020, month: 1, day: 1 }) },
     })
-  }
 
-  it('parses standard YYYY-MM-DD to local midnight', () => {
-    stubTemporal()
-    const d = parseLocalDate('2024-03-15')
-    expect(d).not.toBeNull()
-    expect(d!.getFullYear()).toBe(2024)
-    expect(d!.getMonth()).toBe(2)
-    expect(d!.getDate()).toBe(15)
-    expect(d!.getHours()).toBe(0)
-    expect(d!.getMinutes()).toBe(0)
-  })
-
-  it('parses years 0-99 literally, not as 1900s', () => {
-    stubTemporal()
-    const d = parseLocalDate('0050-03-04')
-    expect(d).not.toBeNull()
-    expect(d!.getFullYear()).toBe(50)
-    expect(d!.getMonth()).toBe(2)
-    expect(d!.getDate()).toBe(4)
-    expect(d!.getHours()).toBe(0)
+    expect(parseLocalDate(input)).toBeNull()
   })
 })
 

@@ -3,7 +3,6 @@ import type { LanguageModelStatic, ModelContext } from './types'
 
 declare global {
   var LanguageModel: LanguageModelStatic | undefined
-  var Temporal: any
 
   interface Navigator {
     modelContext?: ModelContext

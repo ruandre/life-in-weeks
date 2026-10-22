@@ -22,14 +22,6 @@ export function parseLocalDate(dateStr: string): Date | null {
   if (!dateStr || typeof dateStr !== 'string')
     return null
 
-  if (typeof Temporal !== 'undefined' && 'PlainDate' in Temporal) {
-    try {
-      const plainDate = Temporal.PlainDate.from(dateStr)
-      return localMidnight(plainDate.year, plainDate.month - 1, plainDate.day)
-    }
-    catch {}
-  }
-
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!match)
     return null
@@ -37,9 +29,9 @@ export function parseLocalDate(dateStr: string): Date | null {
   const year = Number(match[1])
   const month = Number(match[2]) - 1
   const day = Number(match[3])
-  const d = localMidnight(year, month, day)
-  const isRealDate = d.getFullYear() === year && d.getMonth() === month && d.getDate() === day
-  return isRealDate ? d : null
+  const date = localMidnight(year, month, day)
+  const isRealDate = date.getFullYear() === year && date.getMonth() === month && date.getDate() === day
+  return isRealDate ? date : null
 }
 
 export function formatLocalIsoDate(date: Date): string {
