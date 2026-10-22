@@ -12,6 +12,7 @@ export const RECOMMENDED_CLAUDE_MODELS: ModelOption[] = [
 
 export const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-5-5'
 
+// Adaptive thinking counts toward this cap; a lower one risks cutting the card short
 const MAX_OUTPUT_TOKENS = 16_000
 
 // APIError.error carries the parsed body: { type: 'error', error: { type, message } }
@@ -60,7 +61,9 @@ function textDelta(event: MessageStreamEvent): string | undefined {
   return event.delta.text
 }
 
-function throwIfDeclined(message: Message): void {
+function throwIfUnfinished(message: Message): void {
+  if (message.stop_reason === 'max_tokens')
+    throw new Error('Claude stopped at the output length limit before finishing.')
   if (message.stop_reason !== 'refusal')
     return
   const explanation = message.stop_details?.explanation
@@ -93,7 +96,7 @@ export async function streamClaudeCompletion({
     catch (err) {
       throw toReadableError(err, signal)
     }
-    throwIfDeclined(await stream.finalMessage())
+    throwIfUnfinished(await stream.finalMessage())
   }
 
   return generator()

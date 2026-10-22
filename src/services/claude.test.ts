@@ -244,6 +244,14 @@ describe('streamClaudeCompletion', () => {
     await expect(drain(stream)).rejects.toThrow(new Error('Claude declined this request: Policy blocks this.'))
   })
 
+  it('fails instead of passing off a cut-off answer as complete', async () => {
+    streamEvents([textDelta('partial')], { final: { stop_reason: 'max_tokens', stop_details: null } })
+
+    const stream = await streamClaudeCompletion(request)
+
+    await expect(drain(stream)).rejects.toThrow(new Error('Claude stopped at the output length limit before finishing.'))
+  })
+
   it('fails with a generic message when Claude declines without an explanation', async () => {
     streamEvents([], { final: { stop_reason: 'refusal', stop_details: { explanation: null } } })
 
