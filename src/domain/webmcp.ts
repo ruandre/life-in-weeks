@@ -1,6 +1,5 @@
-import { LIFESPAN_MAX_YEARS, LIFESPAN_MIN_YEARS } from '../config/constants'
-import { parseLocalDate } from '../lib/date'
 import { calculateTimeline } from './timeline'
+import { isValidLifespan, parseBirthDate } from './timeline-input'
 
 export interface WebMCPOptions {
   getDob: () => string
@@ -57,17 +56,10 @@ export function initWebMCP({ getDob, getLifespan, selectWeek }: WebMCPOptions): 
       inputSchema: { type: 'object', properties: {} },
       execute: () => {
         const dobStr = getDob()
-        const dob = parseLocalDate(dobStr)
+        const dob = parseBirthDate(dobStr)
         const lifespan = getLifespan()
-
-        if (
-          !dob
-          || !Number.isInteger(lifespan)
-          || lifespan < LIFESPAN_MIN_YEARS
-          || lifespan > LIFESPAN_MAX_YEARS
-        ) {
+        if (!dob || !isValidLifespan(lifespan))
           return 'The timeline has not been generated yet. Set a date of birth and an expected lifespan first.'
-        }
 
         const { passedWeeks, progressPercent, currentWeek, totalWeeks } = calculateTimeline(dob, lifespan)
 

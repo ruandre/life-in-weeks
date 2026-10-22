@@ -3,7 +3,8 @@
   import { flushSync } from 'svelte'
   import { LIFESPAN_MAX_YEARS, LIFESPAN_MIN_YEARS } from '../config/constants'
   import { COUNTRIES } from '../config/countries'
-  import { formatLocalIsoDate, parseLocalDate } from '../lib/date'
+  import { isValidLifespan, parseBirthDate } from '../domain/timeline-input'
+  import { formatLocalIsoDate } from '../lib/date'
 
   interface Props {
     dob: string
@@ -48,10 +49,8 @@
   }
 
   function validate(): boolean {
-    const dobDate = parseLocalDate(dob)
-    const isDobValid = dobDate !== null && dobDate.getTime() <= Date.now()
-    const isLifespanValid
-      = Number.isInteger(lifespan) && lifespan >= LIFESPAN_MIN_YEARS && lifespan <= LIFESPAN_MAX_YEARS
+    const isDobValid = parseBirthDate(dob) !== null
+    const isLifespanValid = isValidLifespan(lifespan)
     const matchedCountry = canonicalCountry(country)
     const isCountryValid = matchedCountry !== null
 

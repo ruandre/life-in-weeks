@@ -1,13 +1,8 @@
 import type { Timeline } from '../domain/timeline'
-import {
-  GRID_FADE_MS,
-  LIFESPAN_DEFAULT_YEARS,
-  LIFESPAN_MAX_YEARS,
-  LIFESPAN_MIN_YEARS,
-} from '../config/constants'
+import { GRID_FADE_MS, LIFESPAN_DEFAULT_YEARS } from '../config/constants'
 import { renderMarkdown } from '../domain/markdown'
 import { calculateTimeline, getWeekAge, getWeekStartDate } from '../domain/timeline'
-import { parseLocalDate } from '../lib/date'
+import { isValidLifespan, parseBirthDate } from '../domain/timeline-input'
 import { getErrorMessage, isAbortError } from '../lib/errors'
 import {
   createResearchStream,
@@ -94,10 +89,8 @@ export class TimelineState {
 
   /** Fades the grid out before the new timeline appears */
   generate({ dob, country, lifespan }: TimelineInput): boolean {
-    const dobDate = parseLocalDate(dob)
-    if (!dobDate || dobDate.getTime() > Date.now())
-      return false
-    if (!Number.isInteger(lifespan) || lifespan < LIFESPAN_MIN_YEARS || lifespan > LIFESPAN_MAX_YEARS)
+    const dobDate = parseBirthDate(dob)
+    if (!dobDate || !isValidLifespan(lifespan))
       return false
 
     if (this.fadeTimer !== null)
