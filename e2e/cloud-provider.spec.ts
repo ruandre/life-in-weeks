@@ -105,3 +105,45 @@ test.describe('on a wide screen', () => {
     expect(resultsBox?.width).toBe(widthBefore)
   })
 })
+
+test.describe('API key note', () => {
+  const isTruncated = (note: HTMLElement): boolean => note.scrollWidth > note.clientWidth
+
+  test('truncates on a stacked layout and expands on request', async ({ timelinePage: page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.getByRole('button', { name: /^model/i }).click()
+    await page.getByRole('radio', { name: 'Claude' }).check()
+    const note = page.getByText(/no free tier/i)
+
+    expect(await note.evaluate(isTruncated)).toBe(true)
+    await expect(note).toContainText(/paste it to run research through claude/i)
+    await expect(note).toHaveAttribute('title', /no free tier/i)
+
+    await page.getByRole('button', { name: 'More' }).click()
+
+    expect(await note.evaluate(isTruncated)).toBe(false)
+    await expect(page.getByRole('button', { name: 'Less' })).toBeVisible()
+  })
+
+  test('truncates the Gemini note too', async ({ timelinePage: page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 })
+    await page.getByRole('button', { name: /^model/i }).click()
+    const note = page.getByText(/free keys are available/i)
+
+    expect(await note.evaluate(isTruncated)).toBe(true)
+    await expect(note).toContainText(/paste it to run research through gemini/i)
+
+    await page.getByRole('button', { name: 'More' }).click()
+
+    expect(await note.evaluate(isTruncated)).toBe(false)
+  })
+
+  test('shows in full beside the results on a wide screen', async ({ timelinePage: page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 })
+    await page.getByRole('button', { name: /^model/i }).click()
+    await page.getByRole('radio', { name: 'Claude' }).check()
+
+    expect(await page.getByText(/no free tier/i).evaluate(isTruncated)).toBe(false)
+    await expect(page.getByRole('button', { name: 'More' })).toBeHidden()
+  })
+})

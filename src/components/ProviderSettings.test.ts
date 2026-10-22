@@ -1,8 +1,14 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/svelte'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { settingsState } from '../state/settings.svelte'
 import ProviderSettings from './ProviderSettings.svelte'
+
+// jsdom lacks ResizeObserver; key note measures its overflow. File-scoped: state resets re-render after hooks
+vi.stubGlobal('ResizeObserver', class {
+  observe() {}
+  disconnect() {}
+})
 
 afterEach(() => {
   settingsState.setCloudProvider('gemini')

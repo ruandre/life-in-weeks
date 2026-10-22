@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ResearchState } from '../state/timeline.svelte'
 import { fireEvent, render, screen } from '@testing-library/svelte'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { settingsState } from '../state/settings.svelte'
 import ResearchPanel from './ResearchPanel.svelte'
 
@@ -16,6 +16,12 @@ const idleResearch: ResearchState = {
   errorMessage: null,
   statusMessage: '',
 }
+
+// jsdom lacks ResizeObserver; key note measures its overflow. File-scoped: state resets re-render after hooks
+vi.stubGlobal('ResizeObserver', class {
+  observe() {}
+  disconnect() {}
+})
 
 afterEach(() => {
   settingsState.setPanelOpen(false)

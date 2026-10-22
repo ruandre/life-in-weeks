@@ -4,6 +4,7 @@
   import { isResearchEffort, RESEARCH_EFFORTS } from '../domain/research-effort'
   import { CLOUD_PROVIDERS, isCloudProviderId } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
+  import TruncatedNote from './TruncatedNote.svelte'
 
   const cloudProviders = Object.values(CLOUD_PROVIDERS)
 
@@ -26,6 +27,8 @@
   const selectedModel = $derived(settingsState.canPickModel ? settingsState.model : '')
 
   const cloud = $derived(settingsState.cloudProvider)
+
+  const keyNote = $derived(`${cloud.billingNote} Paste it to run research through ${cloud.name} instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.`)
 
   function handleKeyInput(event: Event & { currentTarget: HTMLInputElement }): void {
     settingsState.setApiKey(event.currentTarget.value)
@@ -90,9 +93,12 @@
         {statusText}
       </p>
     {/if}
-    <p class='hint' id='cloud-key-hint'>
-      Get an API key at <a href={cloud.keyConsoleUrl} target='_blank' rel='noopener noreferrer' class='inline-link'>{cloud.keyConsoleName} <ExternalLink size={11} aria-hidden='true' /></a>. {cloud.billingNote} Paste it to run research through {cloud.name} instead of the on-device model. Held in memory only and never saved: closing this panel or reloading clears it and returns to the on-device model.
-    </p>
+    <div class='hint' id='cloud-key-hint'>
+      <p>Get an API key at <a href={cloud.keyConsoleUrl} target='_blank' rel='noopener noreferrer' class='inline-link'>{cloud.keyConsoleName} <ExternalLink size={11} aria-hidden='true' /></a>.</p>
+      {#key cloud.id}
+        <TruncatedNote text={keyNote} />
+      {/key}
+    </div>
   </div>
 
   <div class='field'>
