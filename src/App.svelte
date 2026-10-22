@@ -15,8 +15,8 @@
     }
 
     const cleanupWebMCP = initWebMCP({
-      getDob: () => timelineState.displayedDob,
-      getLifespan: () => timelineState.displayedLifespan,
+      getDob: () => timelineState.committed?.dob ?? '',
+      getLifespan: () => timelineState.committed?.lifespan ?? 0,
       selectWeek: (w: number) => timelineState.selectWeek(w),
     })
 
@@ -52,9 +52,9 @@
   </aside>
 
   <TimelineGrid
-    timeline={timelineState.timeline}
-    dob={timelineState.displayedDob}
-    lifespan={timelineState.displayedLifespan}
+    timeline={timelineState.rendered?.timeline ?? null}
+    dob={timelineState.rendered?.dob ?? ''}
+    lifespan={timelineState.rendered?.lifespan ?? timelineState.lifespan}
     hasGenerated={timelineState.hasGenerated}
     isLoaded={timelineState.isGridLoaded}
     selectedWeek={timelineState.selectedWeek}

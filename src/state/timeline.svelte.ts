@@ -59,19 +59,23 @@ export interface TimelineInput {
   lifespan: number
 }
 
+/** Submitted inputs with the timeline computed from them */
+export interface GeneratedTimeline extends TimelineInput {
+  dobDate: Date
+  timeline: Timeline
+}
+
 export class TimelineState {
   dob = $state(DEFAULT_DOB)
   country = $state('')
   lifespan = $state(LIFESPAN_DEFAULT_YEARS)
 
-  hasGenerated = $state(false)
   isGenerating = $state(false)
   isGridLoaded = $state(false)
 
-  timeline = $state.raw<Timeline | null>(null)
-  displayedDob = $state(DEFAULT_DOB)
-  displayedLifespan = $state<number>(LIFESPAN_DEFAULT_YEARS)
-  displayedCountry = $state('')
+  // Research and agents read committed at once; the grid shows rendered, which lags by the fade
+  committed = $state.raw<GeneratedTimeline | null>(null)
+  rendered = $state.raw<GeneratedTimeline | null>(null)
 
   selectedWeek = $state<number | null>(null)
 
@@ -95,40 +99,48 @@ export class TimelineState {
     return this.applyTimeline(input, 0)
   }
 
-  private applyTimeline({ dob: dobStr, country, lifespan: lifespanYears }: TimelineInput, fadeMs: number): boolean {
-    const dob = parseLocalDate(dobStr)
-    if (!dob || dob.getTime() > Date.now())
+  get hasGenerated(): boolean {
+    return this.rendered !== null
+  }
+
+  private applyTimeline({ dob, country, lifespan }: TimelineInput, fadeMs: number): boolean {
+    const dobDate = parseLocalDate(dob)
+    if (!dobDate || dobDate.getTime() > Date.now())
       return false
-    if (!Number.isInteger(lifespanYears) || lifespanYears < LIFESPAN_MIN_YEARS || lifespanYears > LIFESPAN_MAX_YEARS)
+    if (!Number.isInteger(lifespan) || lifespan < LIFESPAN_MIN_YEARS || lifespan > LIFESPAN_MAX_YEARS)
       return false
 
     if (this.fadeTimer !== null)
       clearTimeout(this.fadeTimer)
 
-    const newTimeline = calculateTimeline(dob, lifespanYears)
-
-    const inputsChanged = dobStr !== this.displayedDob
-      || country !== this.displayedCountry
-      || lifespanYears !== this.displayedLifespan
-    if (inputsChanged)
+    const previous = this.committed
+    const isSameInput = previous !== null
+      && previous.dob === dob
+      && previous.country === country
+      && previous.lifespan === lifespan
+    if (!isSameInput)
       this.clearResearch()
 
-    this.dob = dobStr
+    const generated: GeneratedTimeline = {
+      dob,
+      dobDate,
+      country,
+      lifespan,
+      timeline: calculateTimeline(dobDate, lifespan),
+    }
+    this.committed = generated
+    this.dob = dob
     this.country = country
-    this.lifespan = lifespanYears
+    this.lifespan = lifespan
     this.isGenerating = true
     this.isGridLoaded = false
 
-    this.stats.targetLived = newTimeline.passedWeeks
-    this.stats.targetProgress = newTimeline.progressPercent
+    this.stats.targetLived = generated.timeline.passedWeeks
+    this.stats.targetProgress = generated.timeline.progressPercent
 
     const apply = () => {
       this.fadeTimer = null
-      this.timeline = newTimeline
-      this.displayedDob = dobStr
-      this.displayedLifespan = lifespanYears
-      this.displayedCountry = country
-      this.hasGenerated = true
+      this.rendered = generated
       this.isGenerating = false
 
       // Double rAF ensures paint before transition
@@ -158,12 +170,13 @@ export class TimelineState {
     if (!Number.isInteger(weekIndex) || weekIndex < 1)
       return this.showFailure('error', 'Pick a week on the grid.')
 
-    if (this.timeline && weekIndex > this.timeline.totalWeeks)
+    const generated = this.committed
+    if (!generated)
+      return this.showFailure('error', 'Set a valid date of birth first.')
+    if (weekIndex > generated.timeline.totalWeeks)
       return `Week ${weekIndex} is outside the timeline. Check the expected lifespan.`
 
-    const dobDate = parseLocalDate(this.displayedDob)
-    if (!dobDate)
-      return this.showFailure('error', 'Set a valid date of birth first.')
+    const { dobDate, country } = generated
 
     this.activeController?.abort()
     const controller = new AbortController()
@@ -192,7 +205,7 @@ export class TimelineState {
       const stream = await createResearchStream({
         weekIndex,
         dobDate,
-        country: this.displayedCountry,
+        country,
         provider,
         credentials: { apiKey: settingsState.apiKey, model: settingsState.model },
         signal: controller.signal,

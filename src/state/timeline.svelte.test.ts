@@ -81,8 +81,8 @@ describe('generate fade', () => {
     state.restore({ dob: '1980-06-15', country: '', lifespan: 40 })
     vi.advanceTimersByTime(GRID_FADE_MS)
 
-    expect(state.displayedDob).toBe('1980-06-15')
-    expect(state.timeline?.totalWeeks).toBe(40 * 52)
+    expect(state.rendered?.dob).toBe('1980-06-15')
+    expect(state.rendered?.timeline.totalWeeks).toBe(40 * 52)
   })
 
   it('applies only the latest of overlapping fades', () => {
@@ -93,12 +93,12 @@ describe('generate fade', () => {
     state.generate({ dob: '1980-06-15', country: '', lifespan: 40 })
     vi.advanceTimersByTime(GRID_FADE_MS * 2 / 3)
 
-    expect(state.timeline).toBeNull()
+    expect(state.rendered).toBeNull()
 
     vi.advanceTimersByTime(GRID_FADE_MS / 3)
 
-    expect(state.displayedDob).toBe('1980-06-15')
-    expect(state.timeline?.totalWeeks).toBe(40 * 52)
+    expect(state.rendered?.dob).toBe('1980-06-15')
+    expect(state.rendered?.timeline.totalWeeks).toBe(40 * 52)
   })
 
   it('keeps a pending fade when a rejected generate follows', () => {
@@ -108,8 +108,38 @@ describe('generate fade', () => {
     expect(state.generate({ dob: '2999-01-01', country: '', lifespan: 70 })).toBe(false)
     vi.advanceTimersByTime(GRID_FADE_MS)
 
-    expect(state.displayedDob).toBe('2000-01-01')
-    expect(state.timeline?.totalWeeks).toBe(70 * 52)
+    expect(state.rendered?.dob).toBe('2000-01-01')
+    expect(state.rendered?.timeline.totalWeeks).toBe(70 * 52)
+  })
+
+  it('researches the new date of birth when a week is picked during the fade', async () => {
+    const state = generatedState()
+    state.generate({ dob: '1980-06-15', country: 'France', lifespan: 40 })
+
+    await state.selectWeek(1)
+
+    expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({
+      dobDate: new Date(1980, 5, 15),
+      country: 'France',
+    }))
+  })
+
+  it('checks the week against the new lifespan during the fade', async () => {
+    const state = generatedState()
+    state.generate({ dob: '2000-01-01', country: '', lifespan: 40 })
+
+    expect(await state.selectWeek(40 * 52 + 1)).toContain('outside the timeline')
+  })
+
+  it('keeps research picked during the fade once the grid catches up', async () => {
+    const state = generatedState()
+    state.generate({ dob: '1980-06-15', country: '', lifespan: 40 })
+    await state.selectWeek(1)
+
+    vi.advanceTimersByTime(GRID_FADE_MS)
+
+    expect(state.selectedWeek).toBe(1)
+    expect(state.research.status).toBe('ready')
   })
 })
 
@@ -133,9 +163,8 @@ describe('selectWeek', () => {
     expect(createResearchStream).toHaveBeenCalledWith(expect.objectContaining({ dobDate: new Date(2000, 0, 1) }))
   })
 
-  it('refuses research without a valid date of birth', async () => {
+  it('refuses research before a timeline is generated', async () => {
     const state = new TimelineState()
-    state.displayedDob = ''
 
     await state.selectWeek(1)
 
