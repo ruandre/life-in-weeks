@@ -46,7 +46,7 @@ export interface ModelContext {
 
 export type ResearchChunkStream = AsyncIterable<string>
 
-export type CloudProviderId = 'gemini'
+export type CloudProviderId = 'gemini' | 'claude'
 
 export type ResearchProvider = 'local' | CloudProviderId
 

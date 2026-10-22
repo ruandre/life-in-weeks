@@ -4,7 +4,7 @@ Your whole life as a grid: one box per week, 52 per row, one row per year of the
 
 Click any box and an on-device AI writes a short card about that week: what was happening in the world and in your country, what people were watching and listening to, what is typical development at that age, and a dad joke. Future weeks get what is already scheduled instead.
 
-The model runs inside Chrome. No account, no server, no request leaves the page. Or paste a Gemini API key and pick a Gemini model instead.
+The model runs inside Chrome. No account, no server, no request leaves the page. Or paste a Gemini or Claude API key and pick a cloud model instead.
 
 ## Requirements
 
@@ -16,11 +16,14 @@ The research panel needs Chrome 148 or later on desktop with the Prompt API (Gem
 
 The grid itself works in any browser. Only the research card needs the model.
 
-## Gemini API
+## Cloud API keys
 
-Open **Model** in the Time Capsule panel and paste a [Gemini API](https://aistudio.google.com/apikey) key. The key is verified against the Gemini API; once accepted, the model dropdown lists available models (defaulting to `gemini-3.6-flash`).
+Open **Model** in the Time Capsule panel, pick a provider, and paste a key. The key is verified against that provider's API; once accepted, the model dropdown lists available models.
 
-The key is held in memory for that tab only and is never written to storage. Closing the panel or reloading clears the key, resets the model selection, and goes back to the on-device model. Requests go straight from the page to `https://generativelanguage.googleapis.com`, so the week you picked and your country leave the browser while a key is set.
+- **Gemini**: get a key at [Google AI Studio](https://aistudio.google.com/apikey). Free keys are available. Defaults to `gemini-3.6-flash`.
+- **Claude**: get a key at the [Claude Console](https://platform.claude.com/settings/keys). There is no free tier: the account needs prepaid credits, and the key check passes even with a zero balance, so research fails with a billing error until credits are added. Each week costs a few cents on the default `claude-sonnet-5-5`.
+
+The key is held in memory for that tab only and is never written to storage. Closing the panel or reloading clears the key, resets the model selection, and goes back to the on-device model. Requests go straight from the page to `https://generativelanguage.googleapis.com` or `https://api.anthropic.com`, so the week you picked and your country leave the browser while a key is set.
 
 ## Development
 

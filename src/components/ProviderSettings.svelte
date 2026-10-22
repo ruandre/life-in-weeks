@@ -1,7 +1,11 @@
 <script lang='ts'>
+  import type { CloudProviderId } from '../types'
   import ExternalLink from '@lucide/svelte/icons/external-link'
   import SlidersHorizontal from '@lucide/svelte/icons/sliders-horizontal'
+  import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
+
+  const cloudProviders = Object.values(CLOUD_PROVIDERS)
 
   const statusText = $derived.by(() => {
     switch (settingsState.keyStatus) {
@@ -28,6 +32,10 @@
   function handleModelChange(event: Event & { currentTarget: HTMLSelectElement }): void {
     settingsState.setModel(event.currentTarget.value)
   }
+
+  function handleProviderChange(event: Event & { currentTarget: HTMLInputElement }): void {
+    settingsState.setCloudProvider(event.currentTarget.value as CloudProviderId)
+  }
 </script>
 
 <details class='provider' ontoggle={handleToggle}>
@@ -42,6 +50,24 @@
   </summary>
 
   <div class='provider-body'>
+    <fieldset class='field'>
+      <legend>Provider</legend>
+      <div class='radio-row'>
+        {#each cloudProviders as option (option.id)}
+          <label class='radio'>
+            <input
+              type='radio'
+              name='cloud-provider'
+              value={option.id}
+              checked={settingsState.cloudProviderId === option.id}
+              onchange={handleProviderChange}
+            />
+            {option.name}
+          </label>
+        {/each}
+      </div>
+    </fieldset>
+
     <div class='field'>
       <label for='cloud-key'>{cloud.name} API key</label>
       <input
@@ -132,14 +158,44 @@
     margin-top: var(--space-4);
   }
 
-  label {
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  legend,
+  .field > label {
     display: block;
     margin-bottom: var(--space-2);
+    padding: 0;
     color: var(--grey);
     font-size: 0.7rem;
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  .radio-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .radio {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--fg);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .radio input {
+    margin: 0;
+    accent-color: var(--accent);
   }
 
   input[type='password'],

@@ -12,6 +12,12 @@ vi.mock('./cloud-provider-registry', () => ({
         yield 'gemini'
       })()),
     },
+    claude: {
+      name: 'Claude',
+      streamCompletion: vi.fn(async () => (async function* () {
+        yield 'claude'
+      })()),
+    },
   },
 }))
 
@@ -22,6 +28,7 @@ vi.mock('./local-model', () => ({
 }))
 
 const streamGeminiCompletion = vi.mocked(CLOUD_PROVIDERS.gemini.streamCompletion)
+const streamClaudeCompletion = vi.mocked(CLOUD_PROVIDERS.claude.streamCompletion)
 const dobDate = new Date(2000, 0, 1)
 const credentials = { apiKey: 'key', model: 'gemini-test' }
 
@@ -51,6 +58,21 @@ describe('createResearchStream', () => {
       model: 'gemini-test',
       systemPrompt: SYSTEM_PROMPT,
     }))
+  })
+
+  it('streams from the selected cloud provider', async () => {
+    const claudeCredentials = { apiKey: 'key', model: 'claude-test' }
+
+    await createResearchStream({ weekIndex: 1, dobDate, provider: 'claude', credentials: claudeCredentials })
+
+    expect(streamGeminiCompletion).not.toHaveBeenCalled()
+    expect(streamClaudeCompletion).toHaveBeenCalledWith(expect.objectContaining(claudeCredentials))
+  })
+
+  it('names the selected provider when credentials are missing', async () => {
+    await expect(createResearchStream({ weekIndex: 1, dobDate, provider: 'claude', credentials: null }))
+      .rejects
+      .toThrow('Add a Claude API key')
   })
 
   it.each([

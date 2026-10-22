@@ -4,7 +4,7 @@
 Life in Weeks is a client-only web app, built with Svelte 5 and TypeScript, that visualizes a human lifespan as a grid of weeks.
 Each row is one year of life; each of the 52 columns in a row is one week of that year. Weeks already lived are filled, the current week is marked, and the rest are empty.
 
-Selecting a week streams a markdown card generated on-device or via Google's Gemini API. For a past week the card covers notable world events, events in the user's country when one is given, pop culture of the period (film, music, TV, games, sport, fads), typical development at that age, and a dad joke. For a future week it covers what is already known or scheduled: elections, sporting events, releases, and anniversaries.
+Selecting a week streams a markdown card generated on-device or via the Google Gemini or Anthropic Claude API. For a past week the card covers notable world events, events in the user's country when one is given, pop culture of the period (film, music, TV, games, sport, fads), typical development at that age, and a dad joke. For a future week it covers what is already known or scheduled: elections, sporting events, releases, and anniversaries.
 
 ## Architecture
 - Framework: Svelte 5 in runes mode ($state, $derived, $effect)
@@ -12,10 +12,11 @@ Selecting a week streams a markdown card generated on-device or via Google's Gem
 - CSS: cascade layers (@layer tokens, reset, base, utilities, motion), container queries, clamp(), standard scrollbar-color and scrollbar-width
 - Inference:
   - On-device: Chrome Prompt API (Gemini Nano) via `LanguageModel`, streamed with `promptStreaming()`
-  - Cloud: Google Gemini API via `@google/genai` (browser build) using user-supplied API key directly from the client
+  - Cloud: Google Gemini API via `@google/genai` or Anthropic Claude API via `@anthropic-ai/sdk` (browser access enabled), each using a user-supplied API key directly from the client
 - Session handling:
   - On-device: one base session holds the system prompt, and each week's request runs on a `clone()` destroyed when the stream ends
   - Gemini API: streaming completion via `ai.models.generateContentStream()` directly from the browser using CORS
+  - Claude API: streaming completion via `client.messages.stream()` directly from the browser using CORS; default model `claude-sonnet-5-5`, requires a funded account (no free tier)
 - Host: static site on GitHub Pages
 
 ## WebMCP tools
@@ -34,9 +35,9 @@ Selecting a week streams a markdown card generated on-device or via Google's Gem
 ## Security and privacy
 - No backend server. Everything runs client-side.
 - On-device inference runs locally in Chrome; prompts and answers never leave the device, and there is no telemetry.
-- When using the Gemini API, requests travel directly from the client to `https://generativelanguage.googleapis.com`. The API key is kept in tab memory only (never written to `localStorage` or cookies) and is cleared on panel close or reload, resetting the model selection.
-- Content Security Policy sets object-src to 'none', base-uri to 'self', and restricts connections to 'self' and `https://generativelanguage.googleapis.com`.
+- When using a cloud API, requests travel directly from the client to `https://generativelanguage.googleapis.com` (Gemini) or `https://api.anthropic.com` (Claude). The API key is kept in tab memory only (never written to `localStorage` or cookies) and is cleared on panel close or reload, resetting the model selection.
+- Content Security Policy sets object-src to 'none', base-uri to 'self', and restricts connections to 'self', `https://generativelanguage.googleapis.com`, and `https://api.anthropic.com`.
 - Model output is rendered through the app's own markdown renderer, never assigned as raw HTML from the model.
 
 ## Graceful degradation
-The grid, statistics, and form work in any modern browser. When `LanguageModel` is missing or not downloaded, the panel explains how to enable it in Chrome or offers entering a Gemini API key from Google AI Studio.
+The grid, statistics, and form work in any modern browser. When `LanguageModel` is missing or not downloaded, the panel explains how to enable it in Chrome or offers entering a Gemini API key from Google AI Studio or a Claude API key from the Claude Console.

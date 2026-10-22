@@ -13,6 +13,13 @@ vi.mock('../services/cloud-provider-registry', () => ({
       fetchModels: vi.fn(),
       streamCompletion: vi.fn(),
     },
+    claude: {
+      id: 'claude',
+      name: 'Claude',
+      defaultModel: 'claude-default',
+      fetchModels: vi.fn(),
+      streamCompletion: vi.fn(),
+    },
   },
 }))
 
@@ -369,6 +376,63 @@ describe('setPanelOpen', () => {
     await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
 
     expect(fetchModels).not.toHaveBeenCalled()
+  })
+})
+
+describe('setCloudProvider', () => {
+  it('switches the provider and resets the model to its default', () => {
+    const state = new SettingsState()
+
+    state.setCloudProvider('claude')
+
+    expect(state.cloudProvider.name).toBe('Claude')
+    expect(state.model).toBe('claude-default')
+  })
+
+  it('wipes the key and loaded models of the previous provider', async () => {
+    const state = await verifiedState()
+
+    state.setCloudProvider('claude')
+
+    expect(state.apiKey).toBe('')
+    expect(state.models).toEqual([])
+    expect(state.keyStatus).toBe('empty')
+    expect(state.keyError).toBeNull()
+  })
+
+  it('cancels a pending verification of the previous provider', async () => {
+    const state = new SettingsState()
+    state.setApiKey('key')
+
+    state.setCloudProvider('claude')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    expect(fetchModels).not.toHaveBeenCalled()
+    expect(state.keyStatus).toBe('empty')
+  })
+
+  it('keeps the key when the provider is unchanged', () => {
+    const state = new SettingsState()
+    state.setApiKey('key')
+
+    state.setCloudProvider('gemini')
+
+    expect(state.apiKey).toBe('key')
+  })
+
+  it('verifies a new key against the selected provider', async () => {
+    const fetchClaudeModels = vi.mocked(CLOUD_PROVIDERS.claude.fetchModels)
+    fetchClaudeModels.mockResolvedValueOnce([{ id: 'claude-default', name: 'Default' }])
+    const state = new SettingsState()
+    state.setCloudProvider('claude')
+
+    state.setApiKey('key')
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS)
+
+    expect(fetchModels).not.toHaveBeenCalled()
+    expect(fetchClaudeModels).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'key' }))
+    expect(state.provider).toBe('claude')
+    expect(state.keyStatus).toBe('valid')
   })
 })
 

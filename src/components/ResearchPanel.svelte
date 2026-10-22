@@ -4,9 +4,12 @@
   import ExternalLink from '@lucide/svelte/icons/external-link'
   import LoaderCircle from '@lucide/svelte/icons/loader-circle'
   import { MONTH_YEAR_FORMAT } from '../lib/date'
+  import { CLOUD_PROVIDERS } from '../services/cloud-provider-registry'
   import { settingsState } from '../state/settings.svelte'
   import Footer from './Footer.svelte'
   import ProviderSettings from './ProviderSettings.svelte'
+
+  const cloudProviders = Object.values(CLOUD_PROVIDERS)
 
   interface Props {
     research: ResearchState
@@ -30,8 +33,15 @@
   const downloadPercent = $derived(Math.round((research.downloadProgress ?? 0) * 100))
 </script>
 
-{#snippet geminiKeyHint()}
-  <p>Or get a Gemini API key at <a href='https://aistudio.google.com/apikey' target='_blank' rel='noopener noreferrer' class='inline-link'>Google AI Studio <ExternalLink size={11} aria-hidden='true' /></a> and paste it under <strong>Model</strong> above.</p>
+{#snippet cloudKeyHint()}
+  <p>
+    Or get an API key at
+    {#each cloudProviders as provider, index (provider.id)}
+      {#if index > 0}or{/if}
+      <a href={provider.keyConsoleUrl} target='_blank' rel='noopener noreferrer' class='inline-link'>{provider.keyConsoleName} <ExternalLink size={11} aria-hidden='true' /></a>
+    {/each}
+    and paste it under <strong>Model</strong> above.
+  </p>
 {/snippet}
 
 <aside
@@ -109,7 +119,7 @@
           </li>
           <li>Relaunch Chrome.</li>
         </ol>
-        {@render geminiKeyHint()}
+        {@render cloudKeyHint()}
       </div>
     {:else if research.status === 'unavailable'}
       <div class='research-empty research-instructions'>
@@ -122,7 +132,7 @@
             >.
           </li>
         </ol>
-        {@render geminiKeyHint()}
+        {@render cloudKeyHint()}
       </div>
     {:else if research.status === 'error'}
       <div class='research-empty'>
